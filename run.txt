@@ -1,0 +1,14 @@
+#install dependencies
+.venv\Scripts\pip install -r requirements.txt
+
+#create virtual environment
+python -m venv .venv
+
+#run virtual environment
+.venv\Scripts\activate
+
+#run frontend
+npm install
+npm run dev
+
+.venv\Scripts\python main.py

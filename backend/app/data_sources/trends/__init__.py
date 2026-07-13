@@ -1,0 +1,1 @@
+# Google Trends Ingestion Module
