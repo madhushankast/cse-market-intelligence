@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from datetime import datetime, timezone
 from app.database.connection import Base
+from app.models.job_log import JobLog
+from app.models.prediction_explanation import PredictionExplanationLog
+
 
 
 class StockPrice(Base):

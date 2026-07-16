@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 import pandas as pd
 import numpy as np
 from app.database.connection import SessionLocal
-from app.database.models import StockPrice
+from app.repositories.stock_repository import StockPriceRepository
 from app.preprocessing.pipeline import ProcessingPipeline
 from app.data_sources.cbsl.service import CBSLService
 from app.data_sources.trends.service import TrendsService
@@ -25,10 +25,8 @@ def clean_val(val):
 def get_analytics(symbol: str):
     db = SessionLocal()
     try:
-        formatted_symbol = symbol if "." in symbol else f"{symbol}.N0000"
-        records = db.query(StockPrice).filter(
-            (StockPrice.symbol == formatted_symbol) | (StockPrice.symbol == symbol)
-        ).order_by(StockPrice.date.asc()).all()
+        repo = StockPriceRepository(db)
+        records = repo.get_by_symbol(symbol)
 
         if not records:
             raise HTTPException(
@@ -76,10 +74,8 @@ def get_analytics(symbol: str):
 def get_integrated_data(symbol: str):
     db = SessionLocal()
     try:
-        formatted_symbol = symbol if "." in symbol else f"{symbol}.N0000"
-        records = db.query(StockPrice).filter(
-            (StockPrice.symbol == formatted_symbol) | (StockPrice.symbol == symbol)
-        ).order_by(StockPrice.date.asc()).all()
+        repo = StockPriceRepository(db)
+        records = repo.get_by_symbol(symbol)
 
         if not records:
             raise HTTPException(

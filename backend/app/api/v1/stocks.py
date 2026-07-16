@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.database.connection import SessionLocal
-from app.database.models import StockPrice
+from app.repositories.stock_repository import StockPriceRepository
 from app.services.ingestion_service import IngestionService
 
 router = APIRouter()
@@ -11,10 +11,8 @@ ingestion_service = IngestionService()
 def get_stock(symbol: str):
     db = SessionLocal()
     try:
-        formatted_symbol = symbol if "." in symbol else f"{symbol}.N0000"
-        records = db.query(StockPrice).filter(
-            (StockPrice.symbol == formatted_symbol) | (StockPrice.symbol == symbol)
-        ).order_by(StockPrice.date.asc()).all()
+        repo = StockPriceRepository(db)
+        records = repo.get_by_symbol(symbol)
 
         data = [{
             "symbol": r.symbol,

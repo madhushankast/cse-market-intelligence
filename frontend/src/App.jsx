@@ -30,7 +30,7 @@ function App() {
       <main className="app-main">
         <section className="welcome-hero">
           <div className="hero-content">
-            <span className="badge">Milestone 1 Complete</span>
+            <span className="badge">Milestone 9 — Forecasting Engine</span>
             <h2>Colombo Stock Exchange Intelligence Platform</h2>
             <p className="status-text">
               Backend Status: <span className="highlight-message">{message || "Connecting..."}</span>
@@ -44,6 +44,27 @@ function App() {
             <h3>Stock Analytics</h3>
             <p>View Colombo Stock Exchange prices, trends, and analytics tables.</p>
             <span className="card-action">Open Stock Data &rarr;</span>
+          </Link>
+
+          <Link to="/forecast" className="dashboard-card nav-card">
+            <div className="card-icon">🔮</div>
+            <h3>Price Forecast</h3>
+            <p>Multi-model predictions: Baseline, SARIMAX, and XGBoost with 7-day outlook.</p>
+            <span className="card-action">View Forecasts &rarr;</span>
+          </Link>
+
+          <Link to="/compare" className="dashboard-card nav-card">
+            <div className="card-icon">🏆</div>
+            <h3>Model Comparison</h3>
+            <p>Compare RMSE, MAE, MAPE, and R² across models. Ranked with star ratings.</p>
+            <span className="card-action">Compare Models &rarr;</span>
+          </Link>
+
+          <Link to="/system" className="dashboard-card nav-card">
+            <div className="card-icon">⚙️</div>
+            <h3>System Status</h3>
+            <p>Manage background ETL pipelines, monitor data quality checks, and check run history.</p>
+            <span className="card-action">Configure System &rarr;</span>
           </Link>
         </section>
       </main>

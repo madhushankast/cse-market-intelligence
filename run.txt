@@ -7,8 +7,11 @@ python -m venv .venv
 #run virtual environment
 .venv\Scripts\activate
 
+.venv\Scripts\python main.py
+
 #run frontend
 npm install
 npm run dev
 
-.venv\Scripts\python main.py
+#run backend
+python -m uvicorn main:app --reload --port 8000
