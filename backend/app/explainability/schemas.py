@@ -59,6 +59,9 @@ class PredictionExplanation(BaseModel):
     prediction:         float
     model:              str
     confidence:         float
+    confidence_label:   str = Field("", description="'High' | 'Medium' | 'Low'")
+    confidence_reason:  str = Field("", description="Human-readable reason for confidence assignment")
+    factors:            list[dict] = Field(default_factory=list, description="Descriptive list of feature contributors")
     top_features:       list[FeatureImpact]
     explanation_method: str = Field(
         ...,

@@ -1,49 +1,25 @@
-"""
-PredictionService — high-level facade used by the API layer.
-
-Responsibilities:
-    1. Fetch stock data from the repository
-    2. Run macro + trends integration (reusing the existing merger)
-    3. Pass the merged DataFrame to ForecastTrainer
-    4. Cache results per (symbol, date) to avoid re-training on every request
-    5. Format and return structured response dicts ready for JSON serialization
-
-Cache strategy:
-    - Simple in-memory dict keyed by (symbol, training_date)
-    - Cleared automatically when the date changes (i.e. each trading day)
-    - Suitable for a single-process API server; replace with Redis for multi-worker
-"""
-
-import logging
 from datetime import date, datetime, timezone
+import logging
 from typing import Optional
 
 import pandas as pd
 
 from app.database.connection import SessionLocal
-from app.repositories.stock_repository import StockPriceRepository
-from app.preprocessing.pipeline import ProcessingPipeline
-from app.data_sources.cbsl.service import CBSLService
-from app.data_sources.trends.service import TrendsService
-from app.integration.merger import DataMerger
 from app.forecasting.trainer import ForecastTrainer, TrainingResult
+from app.preprocessing.pipeline import ProcessingPipeline
+from app.repositories.stock_repository import StockPriceRepository
 
 logger = logging.getLogger(__name__)
 
 
 class PredictionService:
     """
-    Orchestrates data fetching, merging, training, and result formatting.
-    Thread-safety note: the cache dict is not locked — acceptable for
-    single-worker Uvicorn. Add a threading.Lock for multi-threaded workers.
+    Orchestrates data fetching, training, and result formatting.
     """
 
     def __init__(self):
-        self._pipeline    = ProcessingPipeline()
-        self._cbsl        = CBSLService()
-        self._trends      = TrendsService()
-        self._merger      = DataMerger()
-        self._trainer     = ForecastTrainer()
+        self._pipeline = ProcessingPipeline()
+        self._trainer = ForecastTrainer()
         # In-memory cache: (symbol, date_str) → TrainingResult
         self._cache: dict[tuple, TrainingResult] = {}
 
@@ -51,12 +27,12 @@ class PredictionService:
     # Public API
     # ------------------------------------------------------------------
 
-    def get_predictions(self, symbol: str, horizon: int = 7) -> dict:
+    def get_predictions(self, symbol: str, horizon: int = 30) -> dict:
         """
         Main prediction endpoint response builder.
 
         Returns a rich dict with current price, per-model predictions,
-        best model info, 7-day forecast series, and metrics.
+        best model info, 30-day forecast series, and metrics.
         """
         result = self._get_or_train(symbol, horizon)
         df = self._get_merged_df(symbol)
@@ -64,66 +40,76 @@ class PredictionService:
         current_price = float(df["close"].iloc[-1]) if len(df) > 0 else None
         last_date = df["date"].iloc[-1] if "date" in df.columns else None
 
-        # Build 7-day forecast dates (skip weekends naively)
+        # Build 30-day forecast dates (skip weekends naively)
         forecast_dates = self._trading_dates(last_date, horizon)
 
-        # Per-model next-day prediction
+        # Per-model prediction trajectory/values
         model_preds = {}
         for model_name, ev in result.evaluations.items():
             vals = result.forecasts.get(model_name, [])
+            ints = result.forecast_intervals.get(model_name, []) if hasattr(result, "forecast_intervals") else []
             model_preds[model_name] = {
-                "next_day_value": vals[0] if vals else None,
+                "next_day_value": vals[-1] if vals else None,
                 "rmse": ev.rmse,
                 "mae":  ev.mae,
                 "mape": ev.mape,
+                "direction_accuracy": ev.direction_accuracy,
                 "r2":   ev.r2,
                 "confidence": ev.confidence(),
                 "star_rating": ev.star_rating(),
                 "warning": ev.warning,
+                "intervals": ints,
+                "forecast_values": vals,
             }
 
         best_ev = result.evaluations.get(result.best_model)
         best_forecast = result.best_forecast
+        best_intervals = getattr(result, "best_intervals", [])
 
         return {
             "symbol":             symbol,
             "current_price":      round(current_price, 4) if current_price else None,
             "predictions":        model_preds,
             "best_model":         result.best_model,
-            "best_prediction":    round(best_forecast[0], 4) if best_forecast else None,
+            "best_prediction":    round(best_forecast[-1], 6) if best_forecast else None,
             "confidence":         best_ev.confidence() if best_ev else None,
             "forecast_horizon_days": horizon,
             "forecast_dates":     forecast_dates,
             "forecast_values":    best_forecast,
+            "forecast_intervals": best_intervals,
             "data_points_used":   result.n_train + result.n_test,
             "n_features":         result.n_features,
             "trained_at":         datetime.now(timezone.utc).isoformat(),
             "warning":            best_ev.warning if best_ev else None,
+            "technical_score":    result.technical_score,
+            "technical_confidence": result.technical_confidence,
+            "technical_adjustment": result.technical_adjustment,
         }
 
     def get_model_comparison(self, symbol: str) -> dict:
         """
         Model comparison response builder — used by the /compare endpoint.
         """
-        horizon = 7
+        horizon = 30
         result = self._get_or_train(symbol, horizon)
 
         comparison = []
         for model_name, ev in result.evaluations.items():
             comparison.append({
-                "model":        model_name,
-                "rmse":         ev.rmse,
-                "mae":          ev.mae,
-                "mape":         ev.mape,
-                "r2":           ev.r2,
-                "confidence":   ev.confidence(),
-                "star_rating":  ev.star_rating(),
-                "n_test":       ev.n_test,
-                "warning":      ev.warning,
+                "model":              model_name,
+                "rmse":               ev.rmse,
+                "mae":                ev.mae,
+                "mape":               ev.mape,
+                "direction_accuracy": ev.direction_accuracy,
+                "r2":                 ev.r2,
+                "confidence":         ev.confidence(),
+                "star_rating":        ev.star_rating(),
+                "n_test":             ev.n_test,
+                "warning":            ev.warning,
             })
 
-        # Sort by MAPE ascending (best first)
-        comparison.sort(key=lambda x: x["mape"])
+        # Sort by Directional Accuracy descending
+        comparison.sort(key=lambda x: x["direction_accuracy"], reverse=True)
 
         return {
             "symbol":              symbol,
@@ -155,8 +141,7 @@ class PredictionService:
 
     def _get_merged_df(self, symbol: str) -> pd.DataFrame:
         """
-        Full data assembly: DB → preprocessing → macro → trends → merge.
-        Mirrors the logic in analytics.py but returns the full DataFrame.
+        Full stock data assembly: DB → preprocessing.
         """
         db = SessionLocal()
         try:
@@ -183,23 +168,7 @@ class PredictionService:
 
         # Technical indicators
         df_processed = self._pipeline.process(df_stock)
-
-        # Macro + trends (best-effort — failures return empty DataFrames)
-        try:
-            df_macro = self._cbsl.get_macro_indicators()
-        except Exception as e:
-            logger.warning(f"CBSL fetch failed: {e} — proceeding without macro data")
-            df_macro = pd.DataFrame(columns=["date", "inflation", "usd_lkr", "interest_rate"])
-
-        try:
-            df_trends = self._trends.get_search_trends("CSE")
-        except Exception as e:
-            logger.warning(f"Trends fetch failed: {e} — proceeding without trend data")
-            df_trends = pd.DataFrame(columns=["date", "trend_score"])
-
-        # Merge
-        df_merged = self._merger.merge(df_processed, df_macro, df_trends)
-        return df_merged
+        return df_processed
 
     @staticmethod
     def _trading_dates(last_date, horizon: int) -> list[str]:
@@ -212,8 +181,13 @@ class PredictionService:
             return []
 
         dates = []
+        # Use trading calendar utility to skip weekends and holidays
+        from app.utils.trading_calendar import add_trading_days
+        current_date = pd.Timestamp(last_date)
         while len(dates) < horizon:
-            current += pd.Timedelta(days=1)
-            if current.dayofweek < 5:   # Mon=0 … Fri=4
-                dates.append(current.strftime("%Y-%m-%d"))
+            # Add one trading day
+            next_date = add_trading_days(current_date.date(), 1)
+            dates.append(next_date.strftime("%Y-%m-%d"))
+            current_date = pd.Timestamp(next_date)
         return dates
+

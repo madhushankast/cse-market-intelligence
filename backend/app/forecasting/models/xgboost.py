@@ -23,15 +23,12 @@ from app.forecasting.evaluator import ModelEvaluator
 
 class XGBoostModel(ForecastModel):
     """
-    Wraps xgboost.XGBRegressor for supervised next-day close prediction.
-
-    Feature importance is stored after training as `self.feature_importances_`,
-    keyed by feature name — ready for SHAP in Milestone 10.
+    Wraps xgboost.XGBRegressor for supervised 30-day close price prediction.
     """
 
     name = "xgboost"
 
-    # Hyperparameters — conservatively chosen for datasets of 50–500 rows
+    # Hyperparameters — conservatively chosen for small/medium datasets
     PARAMS = {
         "n_estimators":   200,
         "max_depth":      5,
@@ -39,7 +36,7 @@ class XGBoostModel(ForecastModel):
         "subsample":      0.8,
         "colsample_bytree": 0.8,
         "random_state":   42,
-        "tree_method":    "hist",   # fast CPU training, no GPU required
+        "tree_method":    "hist",
         "verbosity":      0,
     }
 
@@ -48,13 +45,16 @@ class XGBoostModel(ForecastModel):
         self._feature_names: list[str] = []
         self._last_row: Optional[pd.DataFrame] = None
         self.feature_importances_: dict[str, float] = {}
+        self._last_close = 0.0
 
     # ------------------------------------------------------------------
     def train(self, train_df: pd.DataFrame) -> None:
-        """Fit XGBRegressor on training features."""
+        """Fit XGBRegressor on training Close(t+30)."""
         from xgboost import XGBRegressor
 
-        feature_cols = [c for c in train_df.columns if c not in ("target", "date")]
+        # Keep all features except target, date, and symbol
+        ignored_cols = ("target", "date", "symbol")
+        feature_cols = [c for c in train_df.columns if c not in ignored_cols]
         self._feature_names = feature_cols
 
         X = train_df[feature_cols].values
@@ -63,47 +63,67 @@ class XGBoostModel(ForecastModel):
         self._model = XGBRegressor(**self.PARAMS)
         self._model.fit(X, y)
 
-        # Store last training row for iterative prediction
+        # Store last training row and last close price
         self._last_row = train_df[feature_cols].iloc[[-1]].copy()
+        self._last_close = float(train_df["close"].iloc[-1])
 
-        # Build feature importance dict for SHAP readiness
+        # Build feature importance dict for SHAP
         importances = self._model.feature_importances_
         self.feature_importances_ = {
             name: round(float(imp), 6)
             for name, imp in zip(feature_cols, importances)
         }
 
-    # ------------------------------------------------------------------
-    def predict(self, horizon: int = 7) -> list[float]:
-        """
-        Iterative multi-step prediction:
-        1. Predict next close from last known features.
-        2. Update the 'close' feature with the predicted value.
-        3. Repeat for `horizon` steps.
-        """
-        if self._model is None or self._last_row is None:
+    def predict(
+        self,
+        horizon: int = 30,
+        latest_row: Optional[pd.DataFrame] = None,
+        latest_close: Optional[float] = None,
+        full_df: Optional[pd.DataFrame] = None,
+        technical_score: Optional[float] = None,
+        technical_confidence: Optional[float] = None,
+    ) -> list[float]:
+        """Predict expected 30-day close and project linear path."""
+        if self._model is None or (self._last_row is None and latest_row is None and full_df is None):
             raise RuntimeError("XGBoostModel must be trained before calling predict().")
 
-        predictions = []
-        row = self._last_row.copy()
+        row = self._last_row
+        last_close = self._last_close
 
-        for _ in range(horizon):
-            X = row[self._feature_names].values
-            pred = float(self._model.predict(X)[0])
-            predictions.append(round(pred, 4))
+        if full_df is not None:
+            last_close = float(full_df["close"].iloc[-1])
+            from app.forecasting.dataset import ForecastDataset
+            dataset = ForecastDataset(full_df)
+            row = dataset.get_last_row()
+        else:
+            if latest_row is not None:
+                row = latest_row
+            if latest_close is not None:
+                last_close = latest_close
 
-            # Update 'close' for the next step (simple feature propagation)
-            if "close" in row.columns:
-                row["close"] = pred
-            if "daily_return" in row.columns and pred != 0:
-                prev_close = float(self._last_row["close"].iloc[0])
-                row["daily_return"] = (pred - prev_close) / prev_close
+        X = row[self._feature_names].values
+        pred_val = float(self._model.predict(X)[0])
 
-        return predictions
+        # Apply post-processing technical signal adjustment
+        adjustment = self.compute_technical_adjustment(
+            predicted_price=pred_val,
+            last_close=last_close,
+            technical_score=technical_score,
+            technical_confidence=technical_confidence,
+        )
+        adjusted_pred_val = pred_val + adjustment
+
+        # Project a linear path from current close to predicted 30-day close price
+        prices = [
+            round(last_close + (i + 1) * (adjusted_pred_val - last_close) / horizon, 4)
+            for i in range(horizon)
+        ]
+
+        return prices
 
     # ------------------------------------------------------------------
     def evaluate(self, test_df: pd.DataFrame) -> EvaluationResult:
-        """One-step-ahead predictions on each row of the test set."""
+        """Evaluate predictions on the hold-out test set."""
         if self._model is None:
             raise RuntimeError("XGBoostModel must be trained before calling evaluate().")
 
@@ -116,4 +136,6 @@ class XGBoostModel(ForecastModel):
             model_name=self.name,
             y_true=y_true,
             y_pred=y_pred,
+            y_base=test_df["close"].values,
         )
+

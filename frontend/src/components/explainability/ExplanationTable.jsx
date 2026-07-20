@@ -12,7 +12,7 @@ export default function ExplanationTable({ features }) {
           <tr>
             <th style={{ textAlign: "left" }}>Rank</th>
             <th style={{ textAlign: "left" }}>Feature</th>
-            <th style={{ textAlign: "right" }}>Impact (LKR)</th>
+            <th style={{ textAlign: "right" }}>Contribution</th>
             <th style={{ textAlign: "center" }}>Direction</th>
           </tr>
         </thead>
@@ -29,7 +29,7 @@ export default function ExplanationTable({ features }) {
                 }}
               >
                 {f.impact >= 0 ? "+" : ""}
-                {f.impact.toFixed(4)}
+                {f.impact.toFixed(3)} LKR
               </td>
               <td style={{ textAlign: "center" }}>
                 <span

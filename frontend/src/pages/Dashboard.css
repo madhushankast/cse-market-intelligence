@@ -1,0 +1,219 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 2rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.db-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.db-card.kpi {
+  background: var(--bg-card);
+  gap: 0.5rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.db-card.kpi:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22, 199, 132, 0.30);
+}
+
+.card-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-sub-gain {
+  color: var(--gain, #16c784);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.card-sub {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.status-pill {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-pill.healthy {
+  background: rgba(22, 199, 132, 0.10);
+  color: var(--gain, #16c784);
+  border: 1px solid rgba(22, 199, 132, 0.25);
+}
+
+.status-pill.unhealthy {
+  background: rgba(234, 57, 67, 0.10);
+  color: var(--loss, #ea3943);
+  border: 1px solid rgba(234, 57, 67, 0.25);
+}
+
+.dashboard-split-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.split-section {
+  gap: 1.25rem;
+}
+
+.split-section h3,
+.forecast-summary-card h3,
+.status-summary-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.stocks-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.stocks-summary-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.stocks-summary-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.symbol-cell a {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.symbol-cell a:hover {
+  text-decoration: underline;
+}
+
+.split-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.forecast-summary-card {
+  gap: 1.25rem;
+}
+
+.forecast-detail-inline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--bg-card);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.forecast-metric-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.forecast-metric-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.forecast-metric-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.forecast-metric-badge {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+.btn-primary-card {
+  background: var(--accent-color);
+  color: white;
+  text-decoration: none;
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary-card:hover {
+  opacity: 0.9;
+}
+
+.status-summary-card {
+  gap: 1rem;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding-bottom: 0.5rem;
+}
+
+.status-row span {
+  color: var(--text-secondary);
+}
+
+.status-row strong {
+  color: var(--text-primary);
+}

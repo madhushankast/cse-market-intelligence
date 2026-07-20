@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy.orm import Session
 from app.data_sources.cse.service import CSEService
+from app.utils.trading_calendar import is_trading_day
 from app.repositories.stock_repository import StockPriceRepository
 from app.validation.validator import DataValidator
 from app.database.models import StockPrice
@@ -40,6 +41,9 @@ class CSEPipeline:
                     # Format symbol name consistently
                     sym = row["symbol"]
                     dt = row["date"]
+                    # Skip non‑trading days
+                    if not is_trading_day(dt):
+                        continue
                     if not self.repo.check_exists(sym, dt):
                         record = StockPrice(
                             symbol=sym,

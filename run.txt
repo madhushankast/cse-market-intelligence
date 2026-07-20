@@ -13,5 +13,11 @@ python -m venv .venv
 npm install
 npm run dev
 
-#run backend
-python -m uvicorn main:app --reload --port 8000
+#run backend (from root directory)
+# .venv\Scripts\python -m uvicorn main:app --reload --port 8000
+#run backend (from backend/ directory)
+..\.venv\Scripts\python -m uvicorn main:app --reload --port 8000
+
+
+
+POST http://localhost:8000/api/v1/stocks/refresh

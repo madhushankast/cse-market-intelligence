@@ -22,6 +22,17 @@ class DataValidator:
         errors.extend(check_missing_values(df, expected_cols))
         errors.extend(check_missing_trading_days(df, "symbol", "date", 10))
 
+        # Check for future dates
+        df_dates = pd.to_datetime(df["date"])
+        if (df_dates > pd.Timestamp.now()).any():
+            errors.append("Data contains future dates.")
+
+        # Outlier checks: daily return > 35%
+        if "close" in df.columns and "open" in df.columns:
+            returns = (df["close"] - df["open"]) / df["open"]
+            if (returns.abs() > 0.35).any():
+                errors.append("Outlier detected: Daily returns exceeded 35%.")
+
         return {
             "is_valid": len(errors) == 0,
             "errors": errors

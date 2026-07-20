@@ -47,9 +47,9 @@ class ExplanationVisualizer:
         baseline = explanation.baseline_value
 
         if baseline is None:
-            # Construct a visual baseline: prediction minus sum of all positive impacts
-            pos_sum = sum(f.impact for f in features if f.impact > 0)
-            baseline = max(explanation.prediction - pos_sum, explanation.prediction * 0.90)
+            # Construct a visual baseline such that baseline + sum(impacts) = prediction
+            total_impact = sum(f.impact for f in features)
+            baseline = explanation.prediction - total_impact
 
         points: list[WaterfallPoint] = []
 

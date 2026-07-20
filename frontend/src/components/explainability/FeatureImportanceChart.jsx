@@ -32,7 +32,9 @@ export default function FeatureImportanceChart({ data }) {
             tick={{ fill: "#9ca3af", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
+            domain={['dataMin - 0.1', 'dataMax + 0.1']}
           />
+
           <YAxis
             dataKey="feature"
             type="category"

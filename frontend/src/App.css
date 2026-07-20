@@ -1,17 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --bg-primary: #0a0f1d;
-  --bg-secondary: #121829;
-  --bg-card: #182235;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --accent-color: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --success-color: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.15);
-  --error-color: #ef4444;
-  --error-glow: rgba(239, 68, 68, 0.15);
+  --bg-primary:    #080c12;
+  --bg-secondary:  #0e1622;
+  --bg-card:       #111c2d;
+  --text-primary:  #e2e8f0;
+  --text-secondary:#7a8fa6;
+  --text-muted:    #3d4f63;
+
+  /* Stock market green/red */
+  --gain:          #16c784;
+  --gain-bg:       rgba(22,199,132,0.10);
+  --gain-border:   rgba(22,199,132,0.25);
+  --loss:          #ea3943;
+  --loss-bg:       rgba(234,57,67,0.10);
+  --loss-border:   rgba(234,57,67,0.25);
+
+  /* Keep old names for backward compat */
+  --success-color: #16c784;
+  --success-glow:  rgba(22,199,132,0.12);
+  --error-color:   #ea3943;
+  --error-glow:    rgba(234,57,67,0.12);
   --warning-color: #f59e0b;
-  --border-color: #2e3c54;
+
+  --accent-color:  #3b82f6;
+  --accent-glow:   rgba(59,130,246,0.15);
+  --border-color:  rgba(255,255,255,0.07);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -38,13 +52,7 @@ body {
   padding: 0 1.5rem;
 }
 
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
+/* .app-header is defined lower in the file with sticky + backdrop */
 
 .logo-section {
   display: flex;
@@ -52,17 +60,10 @@ body {
   gap: 0.75rem;
 }
 
-.logo-icon {
-  font-size: 2rem;
-}
+/* .logo-icon defined lower */
 
-.logo-section h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+/* .logo-section h1 defined lower with correct market theme gradient */
+
 
 .status-badge-container {
   display: flex;
@@ -324,13 +325,8 @@ body {
   color: var(--text-secondary);
 }
 
-.app-footer {
-  padding: 2rem 0;
-  border-top: 1px solid var(--border-color);
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
+/* .app-footer defined lower */
+
 
 .status-text {
   margin-top: 1.5rem;
@@ -375,28 +371,8 @@ body {
   background-color: var(--bg-secondary);
 }
 
-.nav-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-color);
-  box-shadow: 0 12px 24px var(--accent-glow);
-}
+/* nav-card:hover, card-icon, card-action defined lower with market green theme */
 
-.card-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-.card-action {
-  margin-top: auto;
-  font-weight: 600;
-  color: var(--accent-color);
-  font-size: 0.95rem;
-  transition: transform 0.2s ease;
-}
-
-.nav-card:hover .card-action {
-  transform: translateX(4px);
-}
 
 /* Stock Page Styles */
 .back-btn {
@@ -978,7 +954,7 @@ body {
 .fc-chart-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -1142,53 +1118,156 @@ body {
   line-height: 1.5;
 }
 
-/* ── 7-day forecast date grid ── */
-.fc-forecast-table-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.75rem;
-}
-
-.fc-forecast-table-card h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 1.25rem;
-}
-
-.fc-forecast-dates {
+/* Restructured 4-tile KPI row */
+.fc-kpi-row-restructured {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .fc-kpi-row-restructured {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .fc-kpi-row-restructured {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Restructured performance table */
+.fc-performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.fc-performance-table th {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.fc-model-table-row {
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255,255,255,0.01);
+  transition: background-color 0.2s;
+}
+
+.fc-model-table-row:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.fc-model-table-row.winning-row {
+  background: rgba(22, 199, 132, 0.05) !important;
+  border: 1px solid var(--model-border) !important;
+}
+
+.fc-model-table-row td {
+  padding: 1.1rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.fc-model-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.fc-model-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fc-model-name-label {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fc-best-badge-tab {
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fc-td-val {
+  font-weight: 700;
+}
+
+/* Restructured Outlook Rows grouped by week */
+.fc-outlook-grouped-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fc-outlook-week-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-bottom: 1.25rem;
+}
+
+.fc-outlook-week-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.week-label-indicator {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fc-forecast-dates-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.85rem;
 }
 
-.fc-forecast-date-cell {
+@media (max-width: 800px) {
+  .fc-forecast-dates-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .fc-forecast-dates-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fc-forecast-date-cell-row {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 0.85rem 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  gap: 0.4rem;
-  transition: transform 0.15s;
+  border-radius: 8px;
+  gap: 0.3rem;
+  transition: transform 0.15s, border-color 0.15s;
 }
 
-.fc-forecast-date-cell:hover {
+.fc-forecast-date-cell-row:hover {
   transform: translateY(-2px);
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: var(--accent-color);
 }
 
-.fc-date-label {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.fc-date-value {
-  font-size: 1rem;
-  font-weight: 700;
-}
 
 /* ═══════════════════════════════════════════════════════════════
    MODEL COMPARISON PAGE — cards, bar chart, feature importance
@@ -1404,6 +1483,282 @@ tr.best-row {
   width: 50px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #34d399;
+  color: #16c784;
   text-align: right;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARED HEADER NAVIGATION — used on Analytics, Forecast, System
+═══════════════════════════════════════════════════════════════ */
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nav-link {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+  border-color: var(--border-color);
+}
+
+.nav-link.active {
+  color: var(--accent-color);
+  background: var(--accent-glow);
+  border-color: var(--accent-color);
+}
+
+/* Navigation links used in SystemStatus (back-link style) */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGO ICON — SVG-based, remove emoji sizing issues
+═══════════════════════════════════════════════════════════════ */
+
+.logo-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Logo bar chart SVG inline icon */
+.logo-svg-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MARKET GAIN / LOSS — used in tables across all pages
+═══════════════════════════════════════════════════════════════ */
+
+td.gain, .gain {
+  color: var(--gain) !important;
+  font-weight: 600;
+}
+
+td.loss, .loss {
+  color: var(--loss) !important;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NO DATA HINT — used in Analytics, Forecast, Dashboard
+═══════════════════════════════════════════════════════════════ */
+
+.no-data-hint {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-style: italic;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER — brand colors and layout upgrades
+═══════════════════════════════════════════════════════════════ */
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.logo-section h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+/* ── Green accent on logo brand mark ── */
+.logo-brand-green {
+  -webkit-text-fill-color: var(--gain);
+  color: var(--gain);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV CARD ICON — replace emoji div with a neutral icon box
+═══════════════════════════════════════════════════════════════ */
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(59,130,246,0.10);
+  border: 1px solid rgba(59,130,246,0.20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SYMBOL PICKER BUTTONS — upgraded stock market style
+═══════════════════════════════════════════════════════════════ */
+
+.symbol-picker {
+  display: flex;
+  gap: 0.35rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.35rem;
+  border-radius: 8px;
+}
+
+.symbol-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+  letter-spacing: 0.03em;
+}
+
+.symbol-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+}
+
+.symbol-btn.active {
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 12px rgba(59,130,246,0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTON — secondary (retry / back)
+═══════════════════════════════════════════════════════════════ */
+
+.btn-secondary {
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-family: var(--font-sans);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: var(--accent-glow);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WELCOME HERO — updated accent glow to green market style
+═══════════════════════════════════════════════════════════════ */
+
+.welcome-hero::before {
+  background: radial-gradient(circle, rgba(22,199,132,0.08) 0%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD CARD NAV — updated hover accent
+═══════════════════════════════════════════════════════════════ */
+
+.nav-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(22,199,132,0.35);
+  box-shadow: 0 12px 30px rgba(22,199,132,0.08);
+}
+
+.card-action {
+  margin-top: auto;
+  font-weight: 600;
+  color: var(--gain);
+  font-size: 0.875rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-card:hover .card-action {
+  transform: translateX(4px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORECAST / COMPARISON PAGE — accent update to market colors
+═══════════════════════════════════════════════════════════════ */
+
+.fc-symbol-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(59,130,246,0.35);
+}
+
+/* Override fi-bar gradient to use market green */
+.fi-bar {
+  background: linear-gradient(90deg, var(--gain), #059669);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS SYSTEM PAGE — metric card gradient updates
+═══════════════════════════════════════════════════════════════ */
+
+.bg-gradient-green {
+  background: linear-gradient(135deg, rgba(22,199,132,0.12) 0%, rgba(22,199,132,0.02) 100%);
+  border-color: rgba(22,199,132,0.25);
+}
+
+.bg-gradient-purple {
+  background: linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(139,92,246,0.02) 100%);
+  border-color: rgba(139,92,246,0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER — subtle market info style
+═══════════════════════════════════════════════════════════════ */
+
+.app-footer {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  color: var(--text-muted, #4a5568);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+

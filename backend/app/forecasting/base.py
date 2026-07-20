@@ -18,28 +18,27 @@ class EvaluationResult:
     model_name: str
     rmse: float
     mae: float
-    mape: float          # Mean Absolute Percentage Error (%)
+    mape: float
+    direction_accuracy: float  # Directional accuracy percentage (0.0 to 1.0)
     r2: float
     n_test: int
     warning: Optional[str] = None
 
     def confidence(self) -> float:
         """
-        Heuristic confidence score: 1 - (MAPE / 100), clipped to [0.5, 0.99].
-        Clearly a heuristic — not a probabilistic interval.
+        Heuristic confidence score based on Directional Accuracy, clipped to [0.5, 0.99].
         """
-        raw = 1.0 - (self.mape / 100.0)
-        return round(max(0.50, min(0.99, raw)), 4)
+        return round(max(0.50, min(0.99, self.direction_accuracy)), 4)
 
     def star_rating(self) -> int:
-        """Maps MAPE → 1–5 stars for the UI comparison page."""
-        if self.mape < 1.0:
+        """Maps Directional Accuracy → 1–5 stars for the UI comparison page."""
+        if self.direction_accuracy >= 0.65:
             return 5
-        elif self.mape < 2.0:
+        elif self.direction_accuracy >= 0.60:
             return 4
-        elif self.mape < 4.0:
+        elif self.direction_accuracy >= 0.55:
             return 3
-        elif self.mape < 7.0:
+        elif self.direction_accuracy >= 0.50:
             return 2
         else:
             return 1
@@ -68,17 +67,63 @@ class ForecastModel(ABC):
         ...
 
     @abstractmethod
-    def predict(self, horizon: int = 7) -> list[float]:
+    def predict(
+        self,
+        horizon: int = 7,
+        latest_row: Optional[pd.DataFrame] = None,
+        latest_close: Optional[float] = None,
+        full_df: Optional[pd.DataFrame] = None,
+        technical_score: Optional[float] = None,
+        technical_confidence: Optional[float] = None,
+    ) -> list[float]:
         """
         Generate `horizon` future close price predictions.
 
         Args:
             horizon: Number of future trading days to forecast.
+            latest_row: Optional latest single row from the full dataset.
+            latest_close: Optional latest closing price.
+            full_df: Optional complete historical DataFrame up to today.
+            technical_score: Optional technical analysis rating score (-5 to +5).
+            technical_confidence: Optional technical signal confidence percentage (0 to 100).
 
         Returns:
             List of predicted close prices, length == horizon.
         """
         ...
+
+    def compute_technical_adjustment(
+        self,
+        predicted_price: float,
+        last_close: float,
+        technical_score: Optional[float] = None,
+        technical_confidence: Optional[float] = None,
+        bias_scale: float = 0.4,
+        max_adjustment_pct: float = 0.02,
+    ) -> float:
+        """
+        Calculates a blended technical adjustment value using:
+            adjustment = technical_score * bias_scale * (technical_confidence / 100.0)
+        Subject to guardrails (capping the adjustment magnitude).
+        """
+        if technical_score is None or technical_confidence is None:
+            return 0.0
+
+        # Convert confidence from percentage (e.g. 86) to fraction (e.g. 0.86)
+        conf_fraction = technical_confidence / 100.0 if technical_confidence > 1.0 else technical_confidence
+
+        # Calculate raw adjustment
+        adjustment = float(technical_score) * bias_scale * conf_fraction
+
+        # Guardrail: Cap adjustment at max_adjustment_pct (e.g., 2% of today's close price)
+        max_adj = last_close * max_adjustment_pct
+
+        # Clamp adjustment
+        if abs(adjustment) > max_adj:
+            import math
+            adjustment = math.copysign(max_adj, adjustment)
+
+        return round(adjustment, 4)
 
     @abstractmethod
     def evaluate(self, test_df: pd.DataFrame) -> EvaluationResult:

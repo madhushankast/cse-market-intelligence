@@ -1,6 +1,44 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import api from "../services/api";
+import "../App.css";
+
+function NavBar() {
+  const location = useLocation();
+  const links = [
+    { to: "/", label: "Dashboard" },
+    { to: "/analytics", label: "Analytics" },
+    { to: "/forecast", label: "Forecasting" },
+    { to: "/compare", label: "Models" },
+    { to: "/system", label: "System" },
+  ];
+  return (
+    <header className="app-header">
+      <div className="logo-section">
+        <svg className="logo-svg-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="4" height="12" rx="1" fill="#16c784"/>
+          <rect x="8" y="8" width="4" height="18" rx="1" fill="#3b82f6"/>
+          <rect x="14" y="4" width="4" height="22" rx="1" fill="#16c784"/>
+          <rect x="20" y="10" width="4" height="16" rx="1" fill="#ea3943"/>
+        </svg>
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <h1>CSE Market Intelligence</h1>
+        </Link>
+      </div>
+      <nav className="header-nav">
+        {links.map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            className={`nav-link${location.pathname === l.to ? " active" : ""}`}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+}
 
 function Stock() {
   const [data, setData] = useState([]);
@@ -22,13 +60,7 @@ function Stock() {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <div className="logo-section">
-          <span className="logo-icon">📊</span>
-          <h1>CSE Market Intelligence</h1>
-        </div>
-        <Link to="/" className="back-btn">&larr; Back to Home</Link>
-      </header>
+      <NavBar />
 
       <main className="app-main">
         <div className="stock-container">
@@ -40,15 +72,15 @@ function Stock() {
           {loading ? (
             <div className="status-container">
               <div className="loader"></div>
-              <p>Loading market data...</p>
+              <p>Loading market data…</p>
             </div>
           ) : error ? (
             <div className="status-container error">
-              <p className="error-text">❌ {error}</p>
+              <p className="error-text">{error}</p>
             </div>
           ) : data.length === 0 ? (
-            <div className="status-container info">
-              <p>No historical transactions found for COMB.</p>
+            <div className="status-container">
+              <p>No historical data found for COMB.</p>
             </div>
           ) : (
             <div className="table-responsive">
@@ -84,7 +116,7 @@ function Stock() {
       </main>
 
       <footer className="app-footer">
-        <p>&copy; {new Date().getFullYear()} CSE Market Intelligence. Built with FastAPI & React.</p>
+        <p>&copy; {new Date().getFullYear()} CSE Market Intelligence &mdash; Colombo Stock Exchange Analytics Platform</p>
       </footer>
     </div>
   );

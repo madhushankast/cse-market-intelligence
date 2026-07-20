@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -15,10 +15,47 @@ import forecastService from "../services/forecastService";
 const SYMBOLS = ["COMB", "JKH", "DIST", "SAMP", "HNB"];
 
 const MODEL_META = {
-  baseline: { label: "Baseline",  color: "#6b7280", description: "Naïve persistence — yesterday's close repeated" },
-  sarimax:  { label: "SARIMAX",   color: "#818cf8", description: "Time-series model with macro exogenous variables" },
-  xgboost:  { label: "XGBoost",   color: "#34d399", description: "Gradient-boosted trees on technical + macro features" },
+  baseline: { label: "Baseline",  color: "#6b7280", description: "Naive persistence — moving average prediction" },
+  sarimax:  { label: "SARIMAX",   color: "#818cf8", description: "Time-series model with technical exogenous variables" },
+  xgboost:  { label: "XGBoost",   color: "#16c784", description: "Gradient-boosted trees on technical + lag features" },
 };
+
+function NavBar() {
+  const location = useLocation();
+  const links = [
+    { to: "/", label: "Dashboard" },
+    { to: "/analytics", label: "Analytics" },
+    { to: "/forecast", label: "Forecasting" },
+    { to: "/compare", label: "Models" },
+    { to: "/system", label: "System" },
+  ];
+  return (
+    <header className="app-header">
+      <div className="logo-section">
+        <svg className="logo-svg-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="4" height="12" rx="1" fill="#16c784"/>
+          <rect x="8" y="8" width="4" height="18" rx="1" fill="#3b82f6"/>
+          <rect x="14" y="4" width="4" height="22" rx="1" fill="#16c784"/>
+          <rect x="20" y="10" width="4" height="16" rx="1" fill="#ea3943"/>
+        </svg>
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <h1>CSE Market Intelligence</h1>
+        </Link>
+      </div>
+      <nav className="header-nav">
+        {links.map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            className={`nav-link${location.pathname === l.to ? " active" : ""}`}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+}
 
 function Stars({ rating, color }) {
   return (
@@ -36,16 +73,6 @@ function Stars({ rating, color }) {
   );
 }
 
-function MetricBadge({ value, unit = "", good = "low" }) {
-  // good="low" means lower is better (RMSE, MAE, MAPE)
-  // good="high" means higher is better (R²)
-  return (
-    <span className="cmp-metric-badge">
-      {value != null ? `${parseFloat(value).toFixed(4)}${unit}` : "—"}
-    </span>
-  );
-}
-
 function FeatureImportanceBar({ name, value, maxVal }) {
   const pct = maxVal > 0 ? (value / maxVal) * 100 : 0;
   return (
@@ -59,7 +86,6 @@ function FeatureImportanceBar({ name, value, maxVal }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function ModelComparison() {
   const [symbol, setSymbol]   = useState("COMB");
   const [data, setData]       = useState(null);
@@ -83,14 +109,12 @@ export default function ModelComparison() {
 
   useEffect(() => { load(symbol); }, [symbol, load]);
 
-  // ── Chart data for bar chart ─────────────────────────────────────────────
   const barData = data?.comparison?.map((m) => ({
     name:  MODEL_META[m.model]?.label ?? m.model,
     value: m[metric] ?? 0,
     model: m.model,
   })) ?? [];
 
-  // ── Feature importance (top 10) ─────────────────────────────────────────
   const featureImportances = data?.feature_importances ?? {};
   const sortedFeatures = Object.entries(featureImportances)
     .sort((a, b) => b[1] - a[1])
@@ -100,28 +124,23 @@ export default function ModelComparison() {
   const METRICS = [
     { key: "rmse", label: "RMSE", hint: "Root Mean Squared Error — lower is better" },
     { key: "mae",  label: "MAE",  hint: "Mean Absolute Error — lower is better" },
-    { key: "mape", label: "MAPE", hint: "Mean Absolute % Error — lower is better" },
+    { key: "mape", label: "MAPE", hint: "Mean Absolute Percentage Error — lower is better" },
+    { key: "direction_accuracy", label: "Accuracy", hint: "Directional Sign Accuracy — higher is better" },
     { key: "r2",   label: "R²",   hint: "Coefficient of Determination — higher is better" },
   ];
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <div className="logo-section">
-          <span className="logo-icon">📊</span>
-          <h1>CSE Market Intelligence</h1>
-        </div>
-        <Link to="/" className="back-btn">← Back to Home</Link>
-      </header>
+      <NavBar />
 
       <main className="app-main">
         <div className="fc-page">
 
-          {/* ── Page header ── */}
+          {/* Page header */}
           <div className="fc-page-header">
             <div>
               <h2 className="fc-title">Model Performance Comparison</h2>
-              <p className="fc-subtitle">Evaluate Baseline, SARIMAX and XGBoost on hold-out data</p>
+              <p className="fc-subtitle">Evaluate Baseline, SARIMAX and XGBoost on hold-out test data</p>
             </div>
             <div className="fc-symbol-picker">
               {SYMBOLS.map((s) => (
@@ -136,7 +155,7 @@ export default function ModelComparison() {
             </div>
           </div>
 
-          {/* ── Loading / Error ── */}
+          {/* Loading / Error */}
           {loading && (
             <div className="fc-loading">
               <div className="fc-spinner" />
@@ -146,21 +165,20 @@ export default function ModelComparison() {
           )}
           {error && !loading && (
             <div className="fc-error">
-              <span>⚠️</span>
-              <div><strong>Comparison unavailable</strong><p>{error}</p></div>
+              <div><strong>Comparison Unavailable</strong><p>{error}</p></div>
             </div>
           )}
 
           {data && !loading && (
             <>
-              {/* ── Info strip ── */}
+              {/* Info strip */}
               <div className="cmp-info-strip">
                 <span>Train rows: <strong>{data.n_train}</strong></span>
                 <span>Test rows: <strong>{data.n_test}</strong></span>
                 <span>Best model: <strong style={{ color: MODEL_META[data.best_model]?.color }}>{MODEL_META[data.best_model]?.label}</strong></span>
               </div>
 
-              {/* ── Model cards ── */}
+              {/* Model cards */}
               <div className="cmp-model-cards">
                 {data.comparison.map((m, idx) => {
                   const meta  = MODEL_META[m.model] ?? { label: m.model, color: "#fff", description: "" };
@@ -171,7 +189,7 @@ export default function ModelComparison() {
                       className={`cmp-model-card ${isBest ? "best" : ""}`}
                       style={{ "--card-color": meta.color }}
                     >
-                      {isBest && <div className="cmp-best-ribbon">🏆 Best</div>}
+                      {isBest && <div className="cmp-best-ribbon">Best Model</div>}
                       <div className="cmp-card-header">
                         <span className="cmp-rank">#{idx + 1}</span>
                         <h3 style={{ color: meta.color }}>{meta.label}</h3>
@@ -190,8 +208,12 @@ export default function ModelComparison() {
                           <span className="cmp-metric-val">{m.mae?.toFixed(4) ?? "—"}</span>
                         </div>
                         <div className="cmp-metric">
+                          <span className="cmp-metric-label">Accuracy</span>
+                          <span className="cmp-metric-val">{m.direction_accuracy != null ? `${(m.direction_accuracy * 100).toFixed(1)}%` : "—"}</span>
+                        </div>
+                        <div className="cmp-metric">
                           <span className="cmp-metric-label">MAPE</span>
-                          <span className="cmp-metric-val">{m.mape != null ? `${m.mape.toFixed(4)}%` : "—"}</span>
+                          <span className="cmp-metric-val">{m.mape != null ? `${m.mape.toFixed(2)}%` : "—"}</span>
                         </div>
                         <div className="cmp-metric">
                           <span className="cmp-metric-label">R²</span>
@@ -202,17 +224,17 @@ export default function ModelComparison() {
                           <span className="cmp-metric-val">{m.confidence != null ? `${(m.confidence * 100).toFixed(1)}%` : "—"}</span>
                         </div>
                         <div className="cmp-metric">
-                          <span className="cmp-metric-label">Test rows</span>
+                          <span className="cmp-metric-label">Test Rows</span>
                           <span className="cmp-metric-val">{m.n_test ?? "—"}</span>
                         </div>
                       </div>
-                      {m.warning && <p className="cmp-warning">⚠️ {m.warning}</p>}
+                      {m.warning && <p className="cmp-warning">{m.warning}</p>}
                     </div>
                   );
                 })}
               </div>
 
-              {/* ── Metric selector + Bar chart ── */}
+              {/* Metric selector + Bar chart */}
               <div className="fc-chart-card">
                 <div className="fc-chart-header">
                   <h3>Visual Comparison</h3>
@@ -231,18 +253,18 @@ export default function ModelComparison() {
                 </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={barData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fill: "#9ca3af", fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="name" tick={{ fill: "#7a8fa6", fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#7a8fa6", fontSize: 11 }} axisLine={false} tickLine={false} />
                     <Tooltip
-                      contentStyle={{ background: "#1e2330", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px" }}
+                      contentStyle={{ background: "#111c2d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px" }}
                       labelStyle={{ color: "#e2e8f0" }}
                       itemStyle={{ color: "#94a3b8" }}
                       formatter={(v) => [parseFloat(v).toFixed(4), metric.toUpperCase()]}
                     />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                       {barData.map((entry) => (
-                        <Cell key={entry.model} fill={MODEL_META[entry.model]?.color ?? "#60a5fa"} />
+                        <Cell key={entry.model} fill={MODEL_META[entry.model]?.color ?? "#3b82f6"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -252,7 +274,7 @@ export default function ModelComparison() {
                 </p>
               </div>
 
-              {/* ── Full metrics table ── */}
+              {/* Full metrics table */}
               <div className="fc-model-table-card">
                 <h3>Full Metrics Table</h3>
                 <div className="table-responsive">
@@ -262,7 +284,7 @@ export default function ModelComparison() {
                         <th>Model</th>
                         <th>RMSE ↓</th>
                         <th>MAE ↓</th>
-                        <th>MAPE ↓</th>
+                        <th>Accuracy ↑</th>
                         <th>R² ↑</th>
                         <th>Confidence</th>
                         <th>Rating</th>
@@ -282,7 +304,7 @@ export default function ModelComparison() {
                             </td>
                             <td>{m.rmse?.toFixed(4) ?? "—"}</td>
                             <td>{m.mae?.toFixed(4) ?? "—"}</td>
-                            <td>{m.mape != null ? `${m.mape.toFixed(4)}%` : "—"}</td>
+                            <td>{m.direction_accuracy != null ? `${(m.direction_accuracy * 100).toFixed(2)}%` : "—"}</td>
                             <td>{m.r2?.toFixed(4) ?? "—"}</td>
                             <td>{m.confidence != null ? `${(m.confidence * 100).toFixed(1)}%` : "—"}</td>
                             <td><Stars rating={m.star_rating} color={meta.color} /></td>
@@ -294,17 +316,17 @@ export default function ModelComparison() {
                 </div>
               </div>
 
-              {/* ── XGBoost Feature Importance ── */}
+              {/* XGBoost Feature Importance */}
               {sortedFeatures.length > 0 && (
                 <div className="fc-model-table-card">
-                  <h3>XGBoost Feature Importance <span className="fc-footnote">(top 10 — for SHAP analysis)</span></h3>
+                  <h3>XGBoost Feature Importance <span className="fc-footnote">(top 10)</span></h3>
                   <div className="fi-list">
                     {sortedFeatures.map(([name, val]) => (
                       <FeatureImportanceBar key={name} name={name} value={val} maxVal={maxFi} />
                     ))}
                   </div>
                   <p className="fc-footnote">
-                    Feature importance shown as fraction of total gain. This data powers SHAP explainability in the next milestone.
+                    Feature importance as fraction of total gain. Powers SHAP explainability analysis.
                   </p>
                 </div>
               )}
@@ -314,7 +336,7 @@ export default function ModelComparison() {
       </main>
 
       <footer className="app-footer">
-        <p>© {new Date().getFullYear()} CSE Market Intelligence. Built with FastAPI & React.</p>
+        <p>&copy; {new Date().getFullYear()} CSE Market Intelligence &mdash; Colombo Stock Exchange Analytics Platform</p>
       </footer>
     </div>
   );

@@ -57,7 +57,7 @@ class ExplanationService:
 
         # Extract predictions
         forecasts = training.forecasts.get(best_name, [])
-        best_prediction = forecasts[0] if forecasts else None
+        best_prediction = forecasts[-1] if forecasts else None
 
         if best_prediction is None:
             return self._placeholder(symbol, confidence, f"No forecast available for model {best_name}")
@@ -118,23 +118,73 @@ class ExplanationService:
             except Exception as fe:
                 return self._placeholder(symbol, confidence, f"All explainers failed: {fe}")
 
-        # Ensure correct formatting of feature names
+        # Ensure correct formatting of feature names and build factors list
         formatted_features = []
+        factors = []
         for feat in explanation.top_features:
+            formatted_name = format_feature_name(feat.feature)
             formatted_features.append(FeatureImpact(
-                feature=format_feature_name(feat.feature),
+                feature=formatted_name,
                 impact=feat.impact,
                 abs_impact=feat.abs_impact,
                 direction=feat.direction
             ))
+
+            dir_text = "supports higher return" if feat.impact > 0 else "reduces expected return"
+            factors.append({
+                "feature": formatted_name,
+                "impact": round(feat.impact, 6),
+                "direction": dir_text
+            })
+
+        # Append the Technical Outlook Adjustment after the main loop to keep it clean
+        technical_score = getattr(training, "technical_score", None)
+        technical_confidence = getattr(training, "technical_confidence", None)
+        technical_adjustment = getattr(training, "technical_adjustment", 0.0)
+
+        if technical_adjustment and technical_adjustment != 0.0:
+            rating_label = "Neutral"
+            try:
+                from app.analytics.technical_signal import _score_to_rating
+                rating_label = _score_to_rating(int(technical_score))
+            except Exception:
+                pass
+
+            adj_name = f"Technical Outlook Adjustment ({rating_label}, {int(technical_confidence)}% conf)"
+            formatted_features.append(FeatureImpact(
+                feature=adj_name,
+                impact=round(technical_adjustment, 4),
+                abs_impact=abs(round(technical_adjustment, 4)),
+                direction="positive" if technical_adjustment >= 0 else "negative",
+            ))
+
+            dir_text = "supports higher return" if technical_adjustment > 0 else "reduces expected return"
+            factors.append({
+                "feature": adj_name,
+                "impact": round(technical_adjustment, 6),
+                "direction": dir_text
+            })
+
         explanation.top_features = formatted_features
+        explanation.factors = factors
+
+        # Assign confidence labels and reasons based on Directional Accuracy (confidence)
+        if confidence >= 0.65:
+            explanation.confidence_label = "High"
+            explanation.confidence_reason = f"Historical directional accuracy is strong ({round(confidence * 100, 1)}%) on unseen validation data."
+        elif confidence >= 0.55:
+            explanation.confidence_label = "Medium"
+            explanation.confidence_reason = f"Historical directional accuracy is moderate ({round(confidence * 100, 1)}%). Volatility might impact near-term stability."
+        else:
+            explanation.confidence_label = "Low"
+            explanation.confidence_reason = f"Historical directional accuracy is low ({round(confidence * 100, 1)}%). Results should be treated as experimental baseline."
 
         # 4. Visualization Data
         if include_viz:
             explanation.visualization_data = ExplanationVisualizer.build(explanation)
 
         # 5. Database Logging (Asynchronous/Non-blocking in API)
-        self._log_to_db(explanation)
+        self._log_to_db(explanation, horizon)
 
         return explanation
 
@@ -158,16 +208,15 @@ class ExplanationService:
         model.train(train_df)
         return model
 
-    def _log_to_db(self, exp: PredictionExplanation):
+    def _log_to_db(self, exp: PredictionExplanation, horizon: int = 7):
         db = SessionLocal()
         try:
-            # Delete old entries for this symbol/model to prevent bloating
+            # 1. Log to prediction_explanations
             db.query(PredictionExplanationLog).filter(
                 PredictionExplanationLog.symbol == exp.symbol,
                 PredictionExplanationLog.model == exp.model
             ).delete()
 
-            # Insert new feature impacts
             for idx, feat in enumerate(exp.top_features):
                 log_entry = PredictionExplanationLog(
                     symbol=exp.symbol,
@@ -184,6 +233,29 @@ class ExplanationService:
                     warning=exp.warning,
                 )
                 db.add(log_entry)
+
+            # 2. Log to forecast_results
+            import json
+            from app.database.models import ForecastResult
+            current_date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            
+            db.query(ForecastResult).filter(
+                ForecastResult.symbol == exp.symbol,
+                ForecastResult.model == exp.model,
+                ForecastResult.date == current_date_str
+            ).delete()
+            
+            forecast_log = ForecastResult(
+                symbol=exp.symbol,
+                date=current_date_str,
+                model=exp.model,
+                horizon=horizon,
+                expected_return=exp.prediction,
+                forecast_values=json.dumps(exp.top_features, default=lambda x: x.dict() if hasattr(x, "dict") else str(x)),
+                explanation_json=json.dumps(exp.factors)
+            )
+            db.add(forecast_log)
+            
             db.commit()
         except Exception as e:
             db.rollback()
@@ -197,6 +269,9 @@ class ExplanationService:
             prediction=0.0,
             model="unknown",
             confidence=confidence,
+            confidence_label="Low",
+            confidence_reason="Prediction engine fell back to placeholder due to training errors.",
+            factors=[],
             top_features=[],
             explanation_method="placeholder",
             baseline_value=None,

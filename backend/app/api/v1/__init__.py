@@ -5,6 +5,8 @@ from .analytics import router as analytics_router
 from .system import router as system_router
 from .predictions import router as predictions_router
 from .explanations import router as explanations_router
+from .forecasting import router as forecasting_router
+from .dashboard import router as dashboard_router
 
 api_router = APIRouter()
 
@@ -36,4 +38,14 @@ api_router.include_router(
 api_router.include_router(
     explanations_router,
     tags=["Explainability"]
+)
+
+api_router.include_router(
+    forecasting_router,
+    tags=["Forecasting"]
+)
+
+api_router.include_router(
+    dashboard_router,
+    tags=["Dashboard"]
 )

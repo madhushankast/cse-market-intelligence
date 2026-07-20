@@ -36,17 +36,28 @@ def top_n_features(
 def format_feature_name(name: str) -> str:
     """
     Convert snake_case feature names to a human-readable label.
-    e.g. 'sma_20' → 'SMA 20', 'usd_lkr' → 'USD/LKR'
     """
     overrides = {
-        "usd_lkr":      "USD/LKR",
-        "sma_20":       "SMA 20",
-        "sma_50":       "SMA 50",
-        "rsi":          "RSI",
-        "macd":         "MACD",
-        "trend_score":  "Google Trends",
-        "daily_return": "Daily Return",
-        "interest_rate":"Interest Rate",
-        "day_of_week":  "Day of Week",
+        "usd_lkr":           "Exchange rate pressure (USD/LKR)",
+        "usd_lkr_age":       "Exchange rate release age",
+        "inflation":         "Inflation rate",
+        "inflation_age":     "Inflation release age",
+        "interest_rate":     "Interest rate policy",
+        "interest_rate_age": "Interest rate release age",
+        "trend_score":       "Investor search interest",
+        "trend_score_age":   "Search interest release age",
+        "trend_lag_1":       "Investor search interest (1-day lag)",
+        "trend_lag_3":       "Investor search interest (3-day lag)",
+        "trend_lag_5":       "Investor search interest (5-day lag)",
+        "trend_lag_7":       "Investor search interest (7-day lag)",
+        "sma_20":            "20-day price momentum",
+        "sma_50":            "50-day price momentum",
+        "rsi":               "Market momentum indicator (RSI)",
+        "macd":              "MACD trend oscillator",
+        "volatility":        "Price volatility",
+        "daily_return":      "Previous daily return",
+        "volume":            "Trading volume",
+        "day_of_week":       "Day of the week effect",
+        "month":             "Monthly calendar effect"
     }
     return overrides.get(name, name.replace("_", " ").title())

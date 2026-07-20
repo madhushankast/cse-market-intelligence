@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ComposedChart,
   Line,
@@ -7,39 +7,74 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
 import forecastService from "../services/forecastService";
 import PredictionExplanationCard from "../components/explainability/PredictionExplanationCard";
 
-// ── Symbols available in the picker ─────────────────────────────────────────
 const SYMBOLS = ["COMB", "JKH", "DIST", "SAMP", "HNB"];
 
-// ── Small helper: model badge colours ───────────────────────────────────────
 const MODEL_COLORS = {
   baseline: { border: "#6b7280", bg: "rgba(107,114,128,0.12)", text: "#9ca3af", label: "Baseline" },
   sarimax:  { border: "#818cf8", bg: "rgba(129,140,248,0.12)", text: "#818cf8", label: "SARIMAX" },
-  xgboost:  { border: "#34d399", bg: "rgba(52,211,153,0.12)", text: "#34d399", label: "XGBoost" },
+  xgboost:  { border: "#16c784", bg: "rgba(22,199,132,0.12)", text: "#16c784", label: "XGBoost" },
 };
 
-// ── Custom tooltip for the chart ─────────────────────────────────────────────
+function NavBar() {
+  const location = useLocation();
+  const links = [
+    { to: "/", label: "Dashboard" },
+    { to: "/analytics", label: "Analytics" },
+    { to: "/forecast", label: "Forecasting" },
+    { to: "/compare", label: "Models" },
+    { to: "/system", label: "System" },
+  ];
+  return (
+    <header className="app-header">
+      <div className="logo-section">
+        <svg className="logo-svg-icon" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="4" height="12" rx="1" fill="#16c784"/>
+          <rect x="8" y="8" width="4" height="18" rx="1" fill="#3b82f6"/>
+          <rect x="14" y="4" width="4" height="22" rx="1" fill="#16c784"/>
+          <rect x="20" y="10" width="4" height="16" rx="1" fill="#ea3943"/>
+        </svg>
+        <Link to="/" style={{ textDecoration: "none" }}>
+          <h1>CSE Market Intelligence</h1>
+        </Link>
+      </div>
+      <nav className="header-nav">
+        {links.map((l) => (
+          <Link
+            key={l.to}
+            to={l.to}
+            className={`nav-link${location.pathname === l.to ? " active" : ""}`}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="fc-tooltip">
       <p className="fc-tooltip-label">{label}</p>
-      {payload.map((p) => (
-        <p key={p.dataKey} style={{ color: p.color }} className="fc-tooltip-row">
-          {p.name}: <strong>{p.value != null ? p.value.toFixed(2) : "—"}</strong>
-        </p>
-      ))}
+      {payload.map((p) => {
+        const fmt = `LKR ${p.value != null ? p.value.toFixed(2) : "—"}`;
+        return (
+          <p key={p.dataKey} style={{ color: p.color }} className="fc-tooltip-row">
+            {p.name}: <strong>{fmt}</strong>
+          </p>
+        );
+      })}
     </div>
   );
 }
 
-// ── Star rating display ───────────────────────────────────────────────────────
 function Stars({ rating }) {
   return (
     <span className="fc-stars">
@@ -50,24 +85,25 @@ function Stars({ rating }) {
   );
 }
 
-// ── KPI card ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, accent }) {
+function KpiCard({ label, value, sub, accent, badge, titleTooltip }) {
   return (
-    <div className="fc-kpi-card" style={{ "--accent": accent }}>
-      <p className="fc-kpi-label">{label}</p>
+    <div className="fc-kpi-card" style={{ "--accent": accent }} title={titleTooltip}>
+      <p className="fc-kpi-label" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+        <span>{label}</span>
+        {badge && <span className="kpi-badge" style={{ fontSize: "0.65rem", padding: "0.1rem 0.3rem", borderRadius: "4px", background: "rgba(59,130,246,0.15)", color: "#93c5fd", border: "1px solid rgba(59,130,246,0.3)", fontWeight: 600 }}>{badge}</span>}
+      </p>
       <p className="fc-kpi-value">{value}</p>
       {sub && <p className="fc-kpi-sub">{sub}</p>}
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function Forecast() {
-  const [symbol, setSymbol]     = useState("COMB");
-  const [data, setData]         = useState(null);
-  const [history, setHistory]   = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
+  const [symbol, setSymbol]   = useState("COMB");
+  const [data, setData]       = useState(null);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
 
   const load = useCallback(async (sym) => {
     setLoading(true);
@@ -76,7 +112,7 @@ export default function Forecast() {
     setHistory([]);
     try {
       const [pred, hist] = await Promise.all([
-        forecastService.getPredictions(sym, 7),
+        forecastService.getPredictions(sym, 30),
         forecastService.getPriceHistory(sym, 60),
       ]);
       setData(pred);
@@ -90,7 +126,6 @@ export default function Forecast() {
 
   useEffect(() => { load(symbol); }, [symbol, load]);
 
-  // ── Build chart data ─────────────────────────────────────────────────────
   const chartData = (() => {
     const historicalPoints = history.map((h) => ({
       date:  h.date,
@@ -109,39 +144,57 @@ export default function Forecast() {
     return [...historicalPoints, ...forecastPoints];
   })();
 
-  // First forecast date (dividing line)
   const splitDate = data?.forecast_dates?.[0] ?? null;
 
-  // ── Best model info ──────────────────────────────────────────────────────
   const bestKey  = data?.best_model ?? "";
   const bestInfo = MODEL_COLORS[bestKey] ?? MODEL_COLORS.baseline;
-  const bestPred = data?.predictions?.[bestKey];
   const confidence = data?.confidence ?? null;
 
-  // ── Per-model comparison rows ────────────────────────────────────────────
   const modelRows = data
     ? Object.entries(data.predictions).map(([k, v]) => ({ key: k, ...v }))
     : [];
 
+  // Calculate dynamic y-axis range to clip extra empty spacing
+  const prices = [
+    ...history.map((h) => h.close),
+    ...(data?.forecast_values || [])
+  ].filter((p) => p != null && p > 0);
+
+  const yMin = prices.length > 0 ? Math.floor(Math.min(...prices) * 0.96) : "auto";
+  const yMax = prices.length > 0 ? Math.ceil(Math.max(...prices) * 1.04) : "auto";
+
+  // Group 30 outlook elements by weeks (5 days per row = 6 rows)
+  const groupedOutlook = (() => {
+    if (!data?.forecast_dates) return [];
+    const chunks = [];
+    const dates = data.forecast_dates;
+    const values = data.forecast_values || [];
+    for (let i = 0; i < dates.length; i += 5) {
+      chunks.push(
+        dates.slice(i, i + 5).map((date, idx) => {
+          const globalIdx = i + idx;
+          const price = values[globalIdx];
+          const prevPrice = globalIdx > 0 ? values[globalIdx - 1] : data.current_price;
+          const isUp = price >= prevPrice;
+          return { date, price, isUp };
+        })
+      );
+    }
+    return chunks;
+  })();
+
   return (
     <div className="app-container">
-      {/* ── Header ── */}
-      <header className="app-header">
-        <div className="logo-section">
-          <span className="logo-icon">📊</span>
-          <h1>CSE Market Intelligence</h1>
-        </div>
-        <Link to="/" className="back-btn">← Back to Home</Link>
-      </header>
+      <NavBar />
 
       <main className="app-main">
         <div className="fc-page">
 
-          {/* ── Page title + symbol picker ── */}
+          {/* Page title + symbol picker */}
           <div className="fc-page-header">
             <div>
               <h2 className="fc-title">Price Forecast</h2>
-              <p className="fc-subtitle">Multi-model next-day predictions with 7-day outlook</p>
+              <p className="fc-subtitle">Multi-model 30-day price predictions with historical context</p>
             </div>
             <div className="fc-symbol-picker">
               {SYMBOLS.map((s) => (
@@ -156,7 +209,7 @@ export default function Forecast() {
             </div>
           </div>
 
-          {/* ── Loading / Error ── */}
+          {/* Loading / Error */}
           {loading && (
             <div className="fc-loading">
               <div className="fc-spinner" />
@@ -167,181 +220,214 @@ export default function Forecast() {
 
           {error && !loading && (
             <div className="fc-error">
-              <span>⚠️</span>
               <div>
-                <strong>Forecast unavailable</strong>
+                <strong>Forecast Unavailable</strong>
                 <p>{error}</p>
               </div>
             </div>
           )}
 
           {data && !loading && (
-            <>
-              {/* ── KPI cards ── */}
-              <div className="fc-kpi-row">
+            <div className="fc-layout-container">
+              {/* SECTION A: Overview Hero Row */}
+              <div className="section-header">Overview</div>
+              <div className="fc-kpi-row-restructured">
                 <KpiCard
                   label="Current Price"
                   value={`LKR ${data.current_price?.toFixed(2) ?? "—"}`}
-                  sub="Last close"
-                  accent="#60a5fa"
+                  sub="Last closing price"
+                  accent="#3b82f6"
                 />
                 <KpiCard
-                  label="Best Prediction (Next Day)"
-                  value={`LKR ${data.best_prediction?.toFixed(2) ?? "—"}`}
-                  sub={`Model: ${bestInfo.label}`}
+                  label="30-Day Forecast"
+                  value={data.best_prediction != null
+                    ? `LKR ${data.best_prediction.toFixed(2)}`
+                    : "—"}
+                  sub={`Best model: ${bestInfo.label}`}
                   accent={bestInfo.border}
+                  badge={data.technical_adjustment && data.technical_adjustment !== 0 ? "Adjusted" : null}
+                  titleTooltip={data.technical_adjustment && data.technical_adjustment !== 0
+                    ? `Adjusted by ${data.technical_adjustment > 0 ? "+" : ""}${data.technical_adjustment.toFixed(2)} LKR based on rule-based Technical Outlook (${data.technical_score > 0 ? "Bullish" : "Bearish"} with ${data.technical_confidence}% confidence).`
+                    : null
+                  }
                 />
                 <KpiCard
-                  label="Confidence"
+                  label="Directional Accuracy"
                   value={confidence ? `${(confidence * 100).toFixed(1)}%` : "—"}
-                  sub="Based on hold-out MAPE"
+                  sub="Hold-out test accuracy"
                   accent="#f59e0b"
                 />
                 <KpiCard
-                  label="Data Points"
+                  label="Data Points Used"
                   value={data.data_points_used ?? "—"}
-                  sub={`${data.n_features} features`}
-                  accent="#a78bfa"
+                  sub={`${data.n_features} feature inputs`}
+                  accent="#8b5cf6"
                 />
               </div>
 
-              {/* ── Warning banner ── */}
+              <div className="fc-reconciliation-note" style={{ margin: "1rem 0", padding: "0.75rem 1rem", background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: "6px", fontSize: "0.85rem", color: "#93c5fd" }}>
+                ℹ️ <strong>Methodology Note:</strong> This statistical forecast is independent of the rule-based Technical Outlook on the Analytics page and may disagree with it.
+              </div>
+
+              {/* Warning banner */}
               {data.warning && (
                 <div className="fc-warning-banner">
-                  ⚠️ {data.warning}
+                  Warning: {data.warning}
                 </div>
               )}
 
-              {/* ── Chart ── */}
+              {/* SECTION B: Forecast Chart */}
+              <div className="section-header">Forecast Chart</div>
               <div className="fc-chart-card">
                 <div className="fc-chart-header">
-                  <h3>Historical Price + 7-Day Forecast</h3>
+                  <div>
+                    <h3>Historical Price + 30-Day Forecast</h3>
+                    <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.6 }}>
+                      Historical close price (LKR) with projected cumulative return
+                    </p>
+                  </div>
                   <div className="fc-chart-legend-inline">
-                    <span className="legend-dot" style={{ background: "#60a5fa" }} /> Historical
-                    <span className="legend-dot" style={{ background: "#f97316", marginLeft: "1rem" }} /> Forecast
+                    <span className="legend-dot" style={{ background: "#3b82f6" }} /> Historical
+                    <span className="legend-dot" style={{ background: "#16c784", marginLeft: "1rem" }} /> 30-Day Forecast
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={340}>
+                <ResponsiveContainer width="100%" height={380}>
                   <ComposedChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fill: "#9ca3af", fontSize: 11 }}
+                      type="category"
+                      tick={{ fill: "#7a8fa6", fontSize: 11 }}
                       tickLine={false}
                       interval="preserveStartEnd"
                     />
                     <YAxis
-                      tick={{ fill: "#9ca3af", fontSize: 11 }}
+                      yAxisId="price"
+                      orientation="left"
+                      tick={{ fill: "#3b82f6", fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
-                      domain={["auto", "auto"]}
+                      domain={[yMin, yMax]}
                       tickFormatter={(v) => `${v.toFixed(0)}`}
+                      label={{ value: "LKR", angle: -90, position: "insideLeft", fill: "#3b82f6", fontSize: 11, dx: -4 }}
                     />
                     <Tooltip content={<ChartTooltip />} />
                     {splitDate && (
                       <ReferenceLine
                         x={splitDate}
-                        stroke="#f97316"
+                        stroke="#16c784"
                         strokeDasharray="4 4"
-                        label={{ value: "Forecast Start", fill: "#f97316", fontSize: 11 }}
+                        yAxisId="price"
+                        label={{ value: "Forecast Start", fill: "#16c784", fontSize: 11 }}
                       />
                     )}
                     <Line
+                      yAxisId="price"
                       type="monotone"
                       dataKey="close"
-                      name="Historical"
-                      stroke="#60a5fa"
+                      name="Historical Price"
+                      stroke="#3b82f6"
                       strokeWidth={2}
                       dot={false}
                       connectNulls={false}
                     />
                     <Line
+                      yAxisId="price"
                       type="monotone"
                       dataKey="forecast"
-                      name="Forecast"
-                      stroke="#f97316"
+                      name="30D Forecast"
+                      stroke="#16c784"
                       strokeWidth={2.5}
                       strokeDasharray="6 3"
-                      dot={{ fill: "#f97316", r: 4 }}
+                      dot={{ fill: "#16c784", r: 4 }}
                       connectNulls={false}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* ── Model comparison mini-table ── */}
+              {/* SECTION C: Model Comparison Table */}
+              <div className="section-header">Model Performance</div>
               <div className="fc-model-table-card">
-                <h3>Model Comparison</h3>
-                <div className="fc-model-grid">
-                  {modelRows.map((m) => {
-                    const info  = MODEL_COLORS[m.key] ?? MODEL_COLORS.baseline;
-                    const isBest = m.key === bestKey;
-                    return (
-                      <div
-                        key={m.key}
-                        className={`fc-model-row ${isBest ? "best" : ""}`}
-                        style={{ "--model-color": info.border }}
-                      >
-                        <div className="fc-model-row-left">
-                          <span className="fc-model-dot" style={{ background: info.border }} />
-                          <span className="fc-model-name">{info.label}</span>
-                          {isBest && <span className="fc-best-badge">Best</span>}
-                        </div>
-                        <div className="fc-model-row-right">
-                          <div className="fc-model-stat">
-                            <span className="fc-stat-label">Next Day</span>
-                            <span className="fc-stat-value" style={{ color: info.text }}>
-                              {m.next_day_value != null ? `LKR ${m.next_day_value.toFixed(2)}` : "—"}
-                            </span>
-                          </div>
-                          <div className="fc-model-stat">
-                            <span className="fc-stat-label">MAPE</span>
-                            <span className="fc-stat-value">{m.mape != null ? `${m.mape.toFixed(2)}%` : "—"}</span>
-                          </div>
-                          <div className="fc-model-stat">
-                            <span className="fc-stat-label">RMSE</span>
-                            <span className="fc-stat-value">{m.rmse != null ? m.rmse.toFixed(2) : "—"}</span>
-                          </div>
-                          <Stars rating={m.star_rating ?? 0} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="fc-footnote">
-                  Models are ranked by MAPE on a 20% hold-out test set.
-                  Confidence is a heuristic derived from 1 − MAPE/100.
+                <table className="fc-performance-table">
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left" }}>Model Name</th>
+                      <th>30D Forecast Value</th>
+                      <th>Directional Accuracy</th>
+                      <th>RMSE</th>
+                      <th style={{ textAlign: "right" }}>Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modelRows.map((m) => {
+                      const info  = MODEL_COLORS[m.key] ?? MODEL_COLORS.baseline;
+                      const isBest = m.key === bestKey;
+                      return (
+                        <tr key={m.key} className={`fc-model-table-row ${isBest ? "winning-row" : ""}`} style={{ "--model-border": info.border }}>
+                          <td style={{ textAlign: "left" }}>
+                            <div className="fc-model-name-wrapper">
+                              <span className="fc-model-dot" style={{ background: info.border }} />
+                              <span className="fc-model-name-label">{info.label}</span>
+                              {isBest && <span className="fc-best-badge-tab">Best</span>}
+                            </div>
+                          </td>
+                          <td className="fc-td-val" style={{ color: info.text }}>
+                            {m.next_day_value != null ? `LKR ${m.next_day_value.toFixed(2)}` : "—"}
+                          </td>
+                          <td className="fc-td-val">
+                            {m.direction_accuracy != null ? `${(m.direction_accuracy * 100).toFixed(1)}%` : "—"}
+                          </td>
+                          <td className="fc-td-val">
+                            {m.rmse != null ? m.rmse.toFixed(2) : "—"}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            <Stars rating={m.star_rating ?? 0} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p className="fc-footnote" style={{ marginTop: "1rem" }}>
+                  Models ranked by directional accuracy on a 20% hold-out test set. Confidence is derived from directional sign agreement.
                 </p>
               </div>
 
-              {/* ── 7-day table ── */}
+              {/* SECTION D: 30-Day Price Outlook Grouped */}
+              <div className="section-header">30-Day Outlook</div>
               {data.forecast_dates?.length > 0 && (
                 <div className="fc-forecast-table-card">
-                  <h3>7-Day Price Outlook — {bestInfo.label}</h3>
-                  <div className="fc-forecast-dates">
-                    {data.forecast_dates.map((d, i) => (
-                      <div key={d} className="fc-forecast-date-cell">
-                        <span className="fc-date-label">{d}</span>
-                        <span className="fc-date-value" style={{ color: bestInfo.border }}>
-                          {data.forecast_values?.[i] != null
-                            ? `LKR ${data.forecast_values[i].toFixed(2)}`
-                            : "—"}
-                        </span>
+                  <div className="fc-outlook-grouped-list">
+                    {groupedOutlook.map((week, weekIdx) => (
+                      <div key={weekIdx} className="fc-outlook-week-row">
+                        <div className="week-label-indicator">Week {weekIdx + 1}</div>
+                        <div className="fc-forecast-dates-row">
+                          {week.map((day, dayIdx) => (
+                            <div key={dayIdx} className="fc-forecast-date-cell-row">
+                              <span className="fc-date-label">{day.date}</span>
+                              <span className="fc-date-value" style={{ color: day.isUp ? "var(--gain)" : "var(--loss)" }}>
+                                {day.price != null ? `LKR ${day.price.toFixed(2)}` : "—"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* ── Explanation card ── */}
-              <PredictionExplanationCard symbol={symbol} />
-            </>
+              {/* SECTION E: Explainable AI (XAI) */}
+              <div className="section-header">Explainable AI (XAI)</div>
+              <PredictionExplanationCard symbol={symbol} horizon={30} />
+            </div>
           )}
         </div>
       </main>
 
       <footer className="app-footer">
-        <p>© {new Date().getFullYear()} CSE Market Intelligence. Built with FastAPI & React.</p>
+        <p>&copy; {new Date().getFullYear()} CSE Market Intelligence &mdash; Colombo Stock Exchange Analytics Platform</p>
       </footer>
     </div>
   );
