@@ -100,24 +100,28 @@ function KpiCard({ label, value, sub, accent, badge, titleTooltip }) {
 }
 
 export default function Forecast() {
-  const [symbol, setSymbol]   = useState("COMB");
-  const [data, setData]       = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [symbol, setSymbol]     = useState("COMB");
+  const [data, setData]         = useState(null);
+  const [history, setHistory]   = useState([]);
+  const [backtest, setBacktest] = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
 
   const load = useCallback(async (sym) => {
     setLoading(true);
     setError(null);
     setData(null);
     setHistory([]);
+    setBacktest(null);
     try {
-      const [pred, hist] = await Promise.all([
+      const [pred, hist, btest] = await Promise.all([
         forecastService.getPredictions(sym, 30),
         forecastService.getPriceHistory(sym, 60),
+        forecastService.getBacktest(sym, 100000).catch(() => null),
       ]);
       setData(pred);
       setHistory(hist.history || []);
+      setBacktest(btest);
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || "Failed to load forecast data");
     } finally {
@@ -200,6 +204,9 @@ export default function Forecast() {
     return weeks;
   })();
 
+  const expectedReturn = data?.expected_return_pct ?? 0;
+  const isPositive = expectedReturn >= 0;
+
   return (
     <div className="app-container">
       <NavBar />
@@ -210,8 +217,8 @@ export default function Forecast() {
           {/* Page title + symbol picker */}
           <div className="fc-page-header">
             <div>
-              <h2 className="fc-title">Price Forecast</h2>
-              <p className="fc-subtitle">Multi-model 30-day price predictions with historical context</p>
+              <h2 className="fc-title">Price Forecast & Technical Assistant</h2>
+              <p className="fc-subtitle">30-Day return predictions, rule-based reasoning, and performance metrics</p>
             </div>
             <SectorStockSelector selectedSymbol={symbol} onSelect={(newSym) => setSymbol(newSym)} />
           </div>
@@ -238,11 +245,12 @@ export default function Forecast() {
             <div className="fc-layout-container">
               {/* SECTION A: Overview Hero Row */}
               <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>Overview</span>
+                <span>Overview & Action Signal</span>
                 <Link to="/compare" className="fc-transparency-link">
                   See how this model is calculated &rarr;
                 </Link>
               </div>
+
               <div className="fc-kpi-row-restructured">
                 <KpiCard
                   label="Current Price"
@@ -251,31 +259,55 @@ export default function Forecast() {
                   accent="#3b82f6"
                 />
                 <KpiCard
-                  label="30-Day Forecast"
-                  value={data.best_prediction != null
-                    ? `LKR ${data.best_prediction.toFixed(2)}`
-                    : "—"}
-                  sub={`Best model: ${bestInfo.label}`}
-                  accent={bestInfo.border}
-                  badge={data.technical_adjustment && data.technical_adjustment !== 0 ? "Adjusted" : null}
-                  titleTooltip={data.technical_adjustment && data.technical_adjustment !== 0
-                    ? `Adjusted by ${data.technical_adjustment > 0 ? "+" : ""}${data.technical_adjustment.toFixed(2)} LKR based on rule-based Technical Outlook (${data.technical_score > 0 ? "Bullish" : "Bearish"} with ${data.technical_confidence}% confidence).`
-                    : null
-                  }
+                  label="30-Day Forecast Price"
+                  value={data.expected_30d_price != null ? `LKR ${data.expected_30d_price.toFixed(2)}` : "—"}
+                  sub={`Expected Return: ${isPositive ? "+" : ""}${expectedReturn.toFixed(2)}%`}
+                  accent={isPositive ? "#16c784" : "#ea3943"}
                 />
                 <KpiCard
-                  label="Model Confidence"
-                  value={data.confidence_label || (confidence >= 0.65 ? "High Confidence" : confidence >= 0.55 ? "Moderate Confidence" : "Low Confidence")}
-                  sub={`Derived from ${bestInfo.label} model accuracy`}
-                  accent={data.confidence_label === "High Confidence" || confidence >= 0.65 ? "#16c784" : data.confidence_label === "Moderate Confidence" || confidence >= 0.55 ? "#f59e0b" : "#ea3943"}
+                  label="Action Signal"
+                  value={data.signal || "HOLD"}
+                  sub={`Model Confidence: ${data.confidence != null ? Math.round(data.confidence * 100) : 75}%`}
+                  accent={data.signal === "BUY" ? "#16c784" : data.signal === "SELL" ? "#ea3943" : "#f59e0b"}
                 />
                 <KpiCard
-                  label="Data Points Used"
-                  value={data.data_points_used ?? "—"}
-                  sub={`${data.n_features} feature inputs`}
+                  label="Best Model"
+                  value={bestInfo.label}
+                  sub={`${data.data_points_used ?? "—"} trained data points`}
                   accent="#8b5cf6"
                 />
               </div>
+
+              {/* Technical Assistant Reasons & Risks Box */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", margin: "1rem 0" }}>
+                <div style={{ background: "rgba(22,199,132,0.06)", border: "1px solid rgba(22,199,132,0.2)", borderRadius: "8px", padding: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#16c784", fontSize: "0.95rem" }}>Key Supporting Reasons</h4>
+                  {data.reasons && data.reasons.length > 0 ? (
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#cdd6f4", fontSize: "0.85rem", lineHeight: "1.6" }}>
+                      {data.reasons.map((r, idx) => (
+                        <li key={idx}>{r}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.85rem" }}>No immediate positive triggers</p>
+                  )}
+                </div>
+
+                <div style={{ background: "rgba(234,57,67,0.06)", border: "1px solid rgba(234,57,67,0.2)", borderRadius: "8px", padding: "1rem" }}>
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#ea3943", fontSize: "0.95rem" }}>Risk & Caution Warnings</h4>
+                  {data.risks && data.risks.length > 0 ? (
+                    <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "#cdd6f4", fontSize: "0.85rem", lineHeight: "1.6" }}>
+                      {data.risks.map((rk, idx) => (
+                        <li key={idx}>{rk}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.85rem" }}>No severe warning signals</p>
+                  )}
+                </div>
+              </div>
+
+
 
               <div className="fc-reconciliation-note" style={{ margin: "1rem 0", padding: "0.75rem 1rem", background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: "6px", fontSize: "0.85rem", color: "#93c5fd" }}>
                 ℹ️ <strong>Methodology Note:</strong> This statistical forecast is independent of the rule-based Technical Outlook on the Analytics page and may disagree with it.

@@ -67,12 +67,33 @@ class PredictionService:
         best_forecast = result.best_forecast
         best_intervals = getattr(result, "best_intervals", [])
 
+        # 30-day future return calculation
+        expected_30d_price = round(best_forecast[-1], 2) if best_forecast else (round(current_price, 2) if current_price else 0.0)
+        expected_return_pct = round(((expected_30d_price - current_price) / current_price) * 100, 2) if current_price else 0.0
+
+        signal = "HOLD"
+        if expected_return_pct >= 2.0:
+            signal = "BUY"
+        elif expected_return_pct <= -2.0:
+            signal = "SELL"
+
+        # Technical signal view for reasons & risks
+        from app.analytics.technical_signal import TechnicalSignalEngine
+        tech_res = TechnicalSignalEngine.calculate(df)
+        reasons = tech_res.get("reasons", [])
+        risks = tech_res.get("risks", [])
+
         return {
             "symbol":             symbol,
             "current_price":      round(current_price, 4) if current_price else None,
             "predictions":        model_preds,
             "best_model":         result.best_model,
             "best_prediction":    round(best_forecast[-1], 6) if best_forecast else None,
+            "expected_30d_price":  expected_30d_price,
+            "expected_return_pct": expected_return_pct,
+            "signal":             signal,
+            "reasons":            reasons,
+            "risks":              risks,
             "confidence":         best_ev.confidence() if best_ev else None,
             "confidence_label":   best_ev.confidence_label() if best_ev else "Moderate Confidence",
             "forecast_horizon_days": horizon,

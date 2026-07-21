@@ -9,6 +9,7 @@ from app.analytics.correlation import CorrelationAnalyzer
 from app.analytics.causality import GrangerCausalityTester
 from app.analytics.lag import LagAnalyzer
 from app.analytics.technical_signal import TechnicalSignalEngine
+from app.analytics.backtest import BacktestEngine
 
 
 router = APIRouter()
@@ -183,4 +184,24 @@ def get_technical_summary(symbol: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analytics/stocks/{symbol}/backtest")
+def get_backtest(symbol: str, initial_capital: float = 100000.0):
+    """
+    Runs trading backtest simulation on historical stock data.
+    """
+    try:
+        df_processed = _get_processed_dataframe(symbol)
+        engine = BacktestEngine(initial_capital=initial_capital)
+        res = engine.run(df_processed)
+        res["symbol"] = symbol
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 

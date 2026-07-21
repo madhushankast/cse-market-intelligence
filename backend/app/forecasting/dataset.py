@@ -23,16 +23,24 @@ from typing import Tuple
 FEATURE_COLUMNS = [
     # Price
     "open", "high", "low", "close", "volume",
-    # Technical indicators
     "daily_return", "log_return", "high_low_pct", "open_close_pct",
-    "sma_10", "sma_20", "sma_50", "ema_20", "ema_50",
-    "rsi", "macd", "macd_signal", "roc",
+    "high_low_range", "open_close_diff",
+    # Technical indicators
+    "sma_10", "sma_20", "sma_50", "ema_10", "ema_20", "ema_50",
+    "adx", "rsi", "macd", "macd_signal", "roc", "stoch_k", "stoch_d", "williams_r",
     "upper_bb", "middle_bb", "lower_bb", "atr",
     "obv", "volume_ma", "volatility",
     # Lag features
+    "close_lag_1", "close_lag_3", "close_lag_5", "close_lag_10",
+    "return_lag_1", "return_lag_5",
     "lag_1", "lag_2", "lag_3", "lag_5", "lag_10", "lag_20",
     # Rolling features
+    "7_day_mean", "14_day_mean", "30_day_mean",
+    "7_day_volatility", "30_day_volatility",
     "rolling_mean", "rolling_std",
+    # Macro Features
+    "ExchangeRate_USD_LKR", "Inflation_CCPI", "InterestRate_SDFR", "InterestRate_SLFR",
+    "trend_score",
     # Calendar
     "day_of_week", "month",
 ]
@@ -46,11 +54,12 @@ class ForecastDataset:
     Transforms a stock DataFrame into a supervised ML dataset.
     """
 
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame, target_horizon: int = 30):
         self._raw = df.copy()
         self._df: pd.DataFrame = pd.DataFrame()
         self._full_df: pd.DataFrame = pd.DataFrame()
         self._feature_names: list[str] = []
+        self._target_horizon = target_horizon
         self._build()
 
     # ------------------------------------------------------------------
@@ -120,21 +129,48 @@ class ForecastDataset:
             df["date"] = pd.to_datetime(df["date"])
             df = df.sort_values("date").reset_index(drop=True)
 
+        # Price diff / ratio features
+        if "high" in df.columns and "low" in df.columns:
+            df["high_low_range"] = (df["high"] - df["low"]) / (df["low"].replace(0, np.nan))
+        if "close" in df.columns and "open" in df.columns:
+            df["open_close_diff"] = (df["close"] - df["open"]) / (df["open"].replace(0, np.nan))
+        if "close" in df.columns and "daily_return" not in df.columns:
+            df["daily_return"] = df["close"].pct_change()
+
         # Engineer calendar features
         if "date" in df.columns:
             df["day_of_week"] = df["date"].dt.dayofweek
             df["month"] = df["date"].dt.month
 
-        # Generate lag features for close price
-        for lag in [1, 2, 3, 5, 10, 20]:
-            df[f"lag_{lag}"] = df["close"].shift(lag)
+        # Lag features
+        if "close" in df.columns:
+            df["close_lag_1"] = df["close"].shift(1)
+            df["close_lag_3"] = df["close"].shift(3)
+            df["close_lag_5"] = df["close"].shift(5)
+            df["close_lag_10"] = df["close"].shift(10)
+            for lag in [1, 2, 3, 5, 10, 20]:
+                df[f"lag_{lag}"] = df["close"].shift(lag)
 
-        # Generate rolling statistics for close price
-        df["rolling_mean"] = df["close"].rolling(20).mean()
-        df["rolling_std"] = df["close"].rolling(20).std()
+        if "daily_return" in df.columns:
+            df["return_lag_1"] = df["daily_return"].shift(1)
+            df["return_lag_5"] = df["daily_return"].shift(5)
 
-        # Target: Close price after 30 trading days
-        df["target"] = df["close"].shift(-30)
+        # Rolling statistics
+        if "close" in df.columns:
+            df["7_day_mean"] = df["close"].rolling(7).mean()
+            df["14_day_mean"] = df["close"].rolling(14).mean()
+            df["30_day_mean"] = df["close"].rolling(30).mean()
+            df["rolling_mean"] = df["close"].rolling(20).mean()
+
+        if "daily_return" in df.columns:
+            df["7_day_volatility"] = df["daily_return"].rolling(7).std()
+            df["30_day_volatility"] = df["daily_return"].rolling(30).std()
+            df["rolling_std"] = df["daily_return"].rolling(20).std()
+
+        # Target: Shifted close price for target_horizon days (default 7 days)
+        horizon = self._target_horizon
+        df["target_7d_return"] = (df["close"].shift(-horizon) - df["close"]) / df["close"]
+        df["target"] = df["close"].shift(-horizon)
 
         # Identify which feature columns are actually present
         available = [c for c in FEATURE_COLUMNS if c in df.columns]

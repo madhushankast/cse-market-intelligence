@@ -27,6 +27,14 @@ const forecastService = {
    */
   getPriceHistory: (symbol, n = 60) =>
     api.get(`/predictions/${symbol}/history?n=${n}`).then((r) => r.data),
+
+  /**
+   * Fetch trading strategy backtest results for a symbol.
+   * @param {string} symbol - Stock ticker
+   * @param {number} initial_capital - Starting portfolio capital
+   */
+  getBacktest: (symbol, initial_capital = 100000) =>
+    api.get(`/analytics/stocks/${symbol}/backtest?initial_capital=${initial_capital}`).then((r) => r.data),
 };
 
 export default forecastService;

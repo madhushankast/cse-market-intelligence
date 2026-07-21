@@ -274,6 +274,23 @@ class TechnicalSignalEngine:
             else:
                 trend_direction = f"Sideways ({pct:+.1f}% over 7 days)"
 
+        # ── Action Signal, Trend, Momentum ──────────────────────────────
+        action_signal = "HOLD"
+        if total_score >= 2:
+            action_signal = "BUY"
+        elif total_score <= -2:
+            action_signal = "SELL"
+
+        trend_view = "Neutral"
+        if total_score >= 1:
+            trend_view = "Bullish"
+        elif total_score <= -1:
+            trend_view = "Bearish"
+
+        momentum_view = "Neutral"
+        if macd is not None and macd_sig is not None:
+            momentum_view = "Improving" if macd > macd_sig else "Weakening"
+
         # ── Reasons & Warnings ────────────────────────────────────────────
         reasons, warnings_list = _build_reasons_warnings(signals, rsi, bollinger)
 
@@ -281,21 +298,30 @@ class TechnicalSignalEngine:
         if volatility is not None and volatility > 0.025:
             warnings_list.append(f"High volatility detected — price swings are above normal")
 
+        # Formatted reasons (✓) and risks (⚠)
+        formatted_reasons = [f"✓ {r}" for r in reasons]
+        formatted_risks = [f"⚠ {w}" for w in warnings_list]
+
         return {
-            "symbol":         latest.get("symbol", ""),
-            "as_of":          as_of,
-            "current_price":  close,
-            "rating":         rating,
-            "score":          total_score,
-            "score_max":      5,
-            "confidence":     confidence,
-            "signals":        signals,
-            "rsi_value":      rsi,
-            "bollinger":      bollinger,
-            "volatility":     {"value": volatility, "label": vol_label},
-            "atr":            atr,
-            "recent_closes":  recent_closes,
-            "trend_direction":trend_direction,
-            "reasons":        reasons,
-            "warnings":       warnings_list,
+            "symbol":           latest.get("symbol", ""),
+            "as_of":            as_of,
+            "current_price":    close,
+            "action_signal":    action_signal,
+            "signal":           action_signal,
+            "rating":           rating,
+            "score":            total_score,
+            "score_max":        5,
+            "confidence":       confidence,
+            "trend":            trend_view,
+            "momentum":         momentum_view,
+            "signals":          signals,
+            "rsi_value":        rsi,
+            "bollinger":        bollinger,
+            "volatility":       {"value": volatility, "label": vol_label},
+            "atr":              atr,
+            "recent_closes":    recent_closes,
+            "trend_direction":  trend_direction,
+            "reasons":          formatted_reasons,
+            "risks":            formatted_risks,
+            "warnings":         warnings_list,
         }
