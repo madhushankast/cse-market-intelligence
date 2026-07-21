@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import api from "../services/api";
+import MarketMomentumCard from "../components/MarketMomentumCard";
 import "./Dashboard.css";
 
 function NavBar() {
@@ -85,128 +86,29 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="dashboard-page">
-            <section className="welcome-hero">
-              <div className="hero-content">
-                <span className="badge">CSE Market Intelligence Platform</span>
-                <h2>Colombo Stock Exchange Analytics &amp; Forecasting</h2>
-                <p className="status-text">
-                  Pipeline Status:{" "}
-                  <span className={`status-pill ${data.pipeline?.status === "healthy" ? "healthy" : "unhealthy"}`}>
-                    {data.pipeline?.status === "healthy" ? "Operational" : "Degraded"}
-                  </span>
-                </p>
+            {/* Standardized Page Header Row */}
+            <div className="dashboard-header-row">
+              <div>
+                <h2>CSE Market Intelligence</h2>
+                <p className="subtitle">Colombo Stock Exchange Analytics &amp; Forecasting</p>
               </div>
-            </section>
-
-            {/* KPI Grid */}
-            <div className="kpi-grid">
-              <div className="db-card kpi">
-                <span className="card-label">ASPI Index</span>
-                <span className="card-value">{data.market?.aspi_benchmark?.toLocaleString() ?? "N/A"}</span>
-                <span className="card-sub-gain">+{data.market?.aspi_change}%</span>
-                {data.market?.aspi_note && (
-                  <span className="card-sub" style={{ fontSize: "0.7rem", opacity: 0.55, marginTop: "0.2rem" }}>
-                    {data.market.aspi_note}
-                  </span>
-                )}
-              </div>
-
-              <div className="db-card kpi">
-                <span className="card-label">Total Data Points</span>
-                <span className="card-value">{data.market?.total_records?.toLocaleString() ?? "N/A"}</span>
-                <span className="card-sub">Historical OHLCV records</span>
-              </div>
-
-              <div className="db-card kpi">
-                <span className="card-label">Tracked Tickers</span>
-                <span className="card-value">{data.market?.unique_symbols ?? "N/A"}</span>
-                <span className="card-sub">Active CSE symbols</span>
-              </div>
-
-              <div className="db-card kpi">
-                <span className="card-label">Last Ingestion</span>
-                <span className="card-value" style={{ fontSize: "1.4rem" }}>{data.pipeline?.last_run ?? "N/A"}</span>
-                <span className="card-sub">ETL pipeline timestamp</span>
+              <div className="live-status-pill">
+                <span className="live-dot" />
+                <span>Live</span>
               </div>
             </div>
 
-            <div className="dashboard-split-grid">
-              {/* Left: Top Stocks */}
-              <div className="db-card split-section">
-                <h3>CSE Top Securities</h3>
-                <div className="table-responsive">
-                  <table className="stocks-summary-table">
-                    <thead>
-                      <tr>
-                        <th>Symbol</th>
-                        <th>Close (LKR)</th>
-                        <th>Change</th>
-                        <th>Volume</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.market?.stocks?.map((s) => {
-                        const isGain = s.change_pct >= 0;
-                        return (
-                          <tr key={s.symbol}>
-                            <td className="symbol-cell">
-                              <Link to={`/stock?symbol=${s.symbol}`}>{s.symbol}</Link>
-                            </td>
-                            <td>Rs. {s.close.toFixed(2)}</td>
-                            <td className={isGain ? "gain" : "loss"}>
-                              {isGain ? "▲" : "▼"} {Math.abs(s.change_pct).toFixed(2)}%
-                            </td>
-                            <td>{s.volume.toLocaleString()}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Right: Forecast + Status */}
-              <div className="split-right-col">
-                <div className="db-card forecast-summary-card">
-                  <h3>30-Day Forecast (COMB)</h3>
-                  {data.forecast ? (
-                    <div className="forecast-detail-inline">
-                      <div className="forecast-metric-block">
-                        <span className="forecast-metric-label">Predicted Close</span>
-                        <span className="forecast-metric-value">Rs. {data.forecast.prediction}</span>
-                      </div>
-                      <div className="forecast-metric-block">
-                        <span className="forecast-metric-label">Best Model</span>
-                        <span className="forecast-metric-badge">{data.forecast.model}</span>
-                      </div>
-                      <div className="forecast-metric-block">
-                        <span className="forecast-metric-label">Confidence</span>
-                        <span className="forecast-metric-value">{(data.forecast.confidence * 100).toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="no-data-hint">No active predictions. Run forecasting first.</p>
-                  )}
-                  <Link to="/forecast" className="btn-primary-card">Open Forecasting Outlook &rarr;</Link>
-                </div>
-
-                <div className="db-card status-summary-card">
-                  <h3>System &amp; Data Pipeline</h3>
-                  <div className="status-row">
-                    <span>Database Records:</span>
-                    <strong>{data.market?.total_records?.toLocaleString() ?? "N/A"}</strong>
-                  </div>
-                  <div className="status-row">
-                    <span>Tracked Tickers:</span>
-                    <strong>{data.market?.unique_symbols ?? "N/A"}</strong>
-                  </div>
-                  <div className="status-row">
-                    <span>Last Ingestion:</span>
-                    <span>{data.pipeline?.last_run ?? "N/A"}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Primary Above-the-Fold Widget: 4-Factor Market Momentum Sentiment */}
+            <MarketMomentumCard
+              aspiValue={data?.market?.aspi_benchmark}
+              aspiChange={data?.market?.aspi_change}
+              stocks={data?.market?.stocks}
+              fullMarketBreadth={data?.market?.full_market_breadth}
+              marketTurnover={data?.market?.market_turnover}
+              concentration={data?.market?.concentration}
+              snpValue={data?.market?.snp_benchmark}
+              snpChange={data?.market?.snp_change}
+            />
           </div>
         )}
       </main>

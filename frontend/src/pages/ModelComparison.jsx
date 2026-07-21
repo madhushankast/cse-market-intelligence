@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import forecastService from "../services/forecastService";
+import SectorStockSelector from "../components/SectorStockSelector";
 
 const SYMBOLS = ["COMB", "JKH", "DIST", "SAMP", "HNB"];
 
@@ -142,17 +143,7 @@ export default function ModelComparison() {
               <h2 className="fc-title">Model Performance Comparison</h2>
               <p className="fc-subtitle">Evaluate Baseline, SARIMAX and XGBoost on hold-out test data</p>
             </div>
-            <div className="fc-symbol-picker">
-              {SYMBOLS.map((s) => (
-                <button
-                  key={s}
-                  className={`fc-symbol-btn ${symbol === s ? "active" : ""}`}
-                  onClick={() => setSymbol(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <SectorStockSelector selectedSymbol={symbol} onSelect={(newSym) => setSymbol(newSym)} />
           </div>
 
           {/* Loading / Error */}

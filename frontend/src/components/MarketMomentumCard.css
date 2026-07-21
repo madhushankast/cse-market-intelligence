@@ -1,0 +1,269 @@
+/* ── Market Momentum & 4-Factor Behavior Cards ───────────────────────── */
+.momentum-section-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* 1. Overview Top Card */
+.momentum-overview-card {
+  background: var(--bg-card, #111827);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.momentum-overview-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.momentum-overview-card.green {
+  border-left: 4px solid var(--gain, #16c784);
+}
+
+.momentum-overview-card.red {
+  border-left: 4px solid var(--loss, #ea3943);
+}
+
+.momentum-overview-card.gray {
+  border-left: 4px solid var(--text-secondary, #8899aa);
+}
+
+.momentum-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.momentum-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary, #8899aa);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.momentum-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+}
+
+.momentum-badge.green {
+  background: var(--gain-bg, rgba(22, 199, 132, 0.10));
+  color: var(--gain, #16c784);
+  border: 1px solid var(--gain-border, rgba(22, 199, 132, 0.25));
+}
+
+.momentum-badge.red {
+  background: var(--loss-bg, rgba(234, 57, 67, 0.10));
+  color: var(--loss, #ea3943);
+  border: 1px solid var(--loss-border, rgba(234, 57, 67, 0.25));
+}
+
+.momentum-badge.gray {
+  background: rgba(136, 153, 170, 0.10);
+  color: var(--text-secondary, #8899aa);
+  border: 1px solid rgba(136, 153, 170, 0.25);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.green {
+  background-color: var(--gain, #16c784);
+  box-shadow: 0 0 8px var(--gain, #16c784);
+}
+
+.status-dot.red {
+  background-color: var(--loss, #ea3943);
+  box-shadow: 0 0 8px var(--loss, #ea3943);
+}
+
+.status-dot.gray {
+  background-color: var(--text-secondary, #8899aa);
+}
+
+.aspi-metric-section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.indices-group {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.aspi-primary-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary, #e2e8f0);
+  letter-spacing: -0.02em;
+}
+
+.aspi-change-pill {
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.aspi-change-pill.positive {
+  background: var(--gain-bg, rgba(22, 199, 132, 0.12));
+  color: var(--gain, #16c784);
+}
+
+.aspi-change-pill.negative {
+  background: var(--loss-bg, rgba(234, 57, 67, 0.12));
+  color: var(--loss, #ea3943);
+}
+
+.aspi-change-pill.neutral {
+  background: rgba(136, 153, 170, 0.12);
+  color: var(--text-secondary, #8899aa);
+}
+
+.secondary-index-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.secondary-index-name {
+  font-weight: 600;
+}
+
+.secondary-index-val {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.overview-auto-summary {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-style: italic;
+}
+
+/* 2. 2x2 Factor Grid below Overview Card */
+.factor-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .factor-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.factor-card {
+  background: var(--bg-card, #111827);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.factor-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.factor-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.factor-card-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.factor-card-icon.green {
+  background: var(--gain-bg, rgba(22, 199, 132, 0.12));
+  color: var(--gain, #16c784);
+}
+
+.factor-card-icon.red {
+  background: var(--loss-bg, rgba(234, 57, 67, 0.12));
+  color: var(--loss, #ea3943);
+}
+
+.factor-card-icon.gray {
+  background: rgba(136, 153, 170, 0.12);
+  color: var(--text-secondary, #8899aa);
+}
+
+.factor-card-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.factor-card-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-secondary, #8899aa);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.factor-card-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.factor-card-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.factor-plain-explanation {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 0.5rem;
+}

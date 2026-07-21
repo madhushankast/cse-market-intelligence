@@ -4,7 +4,7 @@
 #create virtual environment
 python -m venv .venv
 
-#run virtual environment
+#run virtual environmentk
 .venv\Scripts\activate
 
 .venv\Scripts\python main.py
@@ -13,11 +13,9 @@ python -m venv .venv
 npm install
 npm run dev
 
-#run backend (from root directory)
-# .venv\Scripts\python -m uvicorn main:app --reload --port 8000
-#run backend (from backend/ directory)
-..\.venv\Scripts\python -m uvicorn main:app --reload --port 8000
+#run backend
+python -m uvicorn main:app --reload --port 8000
 
+#update data manually
+.venv\Scripts\python -m app.ingestion.daily_update
 
-
-POST http://localhost:8000/api/v1/stocks/refresh

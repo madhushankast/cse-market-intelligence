@@ -129,13 +129,20 @@ class ForecastTrainer:
 
         # Pick best model by weighted selection score (lowest score is best)
         # Score = 0.4*RMSE + 0.2*MAE + 0.2*MAPE + 0.2*(100 - DirAcc*100)
-        def compute_selection_score(ev):
+        baseline_ev = evaluations.get("baseline")
+        base_rmse = baseline_ev.rmse if baseline_ev else 999.0
+
+        def compute_selection_score(ev, name):
             da_pct = ev.direction_accuracy * 100 if ev.direction_accuracy <= 1.0 else ev.direction_accuracy
-            return 0.4 * ev.rmse + 0.2 * ev.mae + 0.2 * ev.mape + 0.2 * (100.0 - da_pct)
+            base_score = 0.4 * ev.rmse + 0.2 * ev.mae + 0.2 * ev.mape + 0.2 * (100.0 - da_pct)
+            # Penalize models performing significantly worse than simple baseline
+            if name != "baseline" and ev.rmse > base_rmse * 1.1:
+                base_score += 1000.0
+            return base_score
 
         ranked = sorted(
             [(name, ev) for name, ev in evaluations.items() if ev.rmse < 999.0],
-            key=lambda x: compute_selection_score(x[1])
+            key=lambda x: compute_selection_score(x[1], x[0])
         )
         best_model_name = ranked[0][0] if ranked else "baseline"
         best_forecast   = forecasts.get(best_model_name, [])

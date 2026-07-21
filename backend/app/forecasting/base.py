@@ -30,15 +30,26 @@ class EvaluationResult:
         """
         return round(max(0.50, min(0.99, self.direction_accuracy)), 4)
 
+    def confidence_label(self) -> str:
+        """User-facing trust category derived from directional accuracy."""
+        da_pct = self.direction_accuracy * 100 if self.direction_accuracy <= 1.0 else self.direction_accuracy
+        if da_pct >= 65.0:
+            return "High Confidence"
+        elif da_pct >= 55.0:
+            return "Moderate Confidence"
+        else:
+            return "Low Confidence"
+
     def star_rating(self) -> int:
         """Maps Directional Accuracy → 1–5 stars for the UI comparison page."""
-        if self.direction_accuracy >= 0.65:
+        da_pct = self.direction_accuracy * 100 if self.direction_accuracy <= 1.0 else self.direction_accuracy
+        if da_pct >= 65.0:
             return 5
-        elif self.direction_accuracy >= 0.60:
+        elif da_pct >= 60.0:
             return 4
-        elif self.direction_accuracy >= 0.55:
+        elif da_pct >= 55.0:
             return 3
-        elif self.direction_accuracy >= 0.50:
+        elif da_pct >= 50.0:
             return 2
         else:
             return 1

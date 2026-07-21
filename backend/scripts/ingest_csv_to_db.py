@@ -1,75 +1,48 @@
-"""
-Ingest existing CSV files into the database.
-Run from: backend/ directory
-Usage: python scripts/ingest_csv_to_db.py
-"""
-import sys
 import os
+import sys
+import glob
+import pandas as pd
+from datetime import datetime, timezone
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Suppress yfinance noise on Windows console
-import logging
-logging.disable(logging.WARNING)
+from app.database.connection import engine, Base
 
-from app.database.connection import SessionLocal, create_tables
-from app.database.models import StockPrice
-from app.repositories.stock_repository import StockPriceRepository
-from app.data_sources.cse.yfinance_client import YFinanceCSEClient, CSV_DIR, YAHOO_TICKER_MAP
-import pandas as pd
+def ingest_all_csvs():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cse_dir = os.path.join(base_dir, "data", "raw", "cse")
 
-logging.disable(logging.NOTSET)
+    Base.metadata.create_all(bind=engine)
 
-# Ensure tables exist
-create_tables()
+    csv_files = glob.glob(os.path.join(cse_dir, "*.csv"))
+    print(f"Found {len(csv_files)} stock CSV files in {cse_dir}")
 
-client = YFinanceCSEClient()
-symbols = list(YAHOO_TICKER_MAP.keys())
+    all_dfs = []
+    for file_path in csv_files:
+        try:
+            df = pd.read_csv(file_path)
+            if not df.empty and "symbol" in df.columns and "date" in df.columns:
+                all_dfs.append(df[["symbol", "date", "open", "high", "low", "close", "volume"]])
+        except Exception:
+            continue
 
-print(f"\n{'='*55}")
-print(f"  CSE CSV -> DB Ingestion ({len(symbols)} symbols)")
-print(f"{'='*55}")
+    if not all_dfs:
+        print("No stock CSV files found to ingest.")
+        return
 
-total_added = 0
+    merged_df = pd.concat(all_dfs, ignore_index=True)
+    merged_df = merged_df.drop_duplicates(subset=["symbol", "date"], keep="last")
+    merged_df["created_at"] = datetime.now(timezone.utc).isoformat()
 
-for sym in symbols:
-    csv_path = os.path.join(CSV_DIR, f"{sym}.csv")
-    if not os.path.exists(csv_path):
-        print(f"  [{sym}] SKIP - no CSV found")
-        continue
+    print(f"Prepared {len(merged_df)} total unique stock records for database ingestion...")
 
-    df = pd.read_csv(csv_path)
-    if df.empty:
-        print(f"  [{sym}] SKIP - CSV is empty")
-        continue
+    # High performance bulk write using pandas to_sql into SQLite
+    with engine.begin() as conn:
+        # Clear existing stock_prices to cleanly seed complete dataset
+        conn.exec_driver_sql("DELETE FROM stock_prices;")
+        merged_df.to_sql("stock_prices", con=conn, if_exists="append", index=False, chunksize=10000)
 
-    df["symbol"] = sym
+    print(f"Successfully ingested {len(merged_df)} stock price records into database!")
 
-    db = SessionLocal()
-    repo = StockPriceRepository(db)
-    added = 0
-    try:
-        for _, row in df.iterrows():
-            if not repo.check_exists(sym, str(row["date"])):
-                db.add(StockPrice(
-                    symbol=sym,
-                    date=str(row["date"]),
-                    open=float(row["open"]),
-                    high=float(row["high"]),
-                    low=float(row["low"]),
-                    close=float(row["close"]),
-                    volume=int(row["volume"]),
-                ))
-                added += 1
-        db.commit()
-        total_added += added
-        last_date = df["date"].max()
-        print(f"  [{sym}] OK - {len(df)} rows in CSV, {added} new in DB  (last: {last_date})")
-    except Exception as e:
-        db.rollback()
-        print(f"  [{sym}] ERROR - {e}")
-    finally:
-        db.close()
-
-print(f"\n{'='*55}")
-print(f"  Total new DB records: {total_added}")
-print(f"{'='*55}\n")
+if __name__ == "__main__":
+    ingest_all_csvs()

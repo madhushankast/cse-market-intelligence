@@ -9,6 +9,7 @@ CSE stocks are listed on Yahoo Finance with the suffix '.CM':
   DIST  →  DIST.CM   (Distilleries Company)
   SAMP  →  SAMP.CM   (Sampath Bank)
   HNB   →  HNB.CM    (Hatton National Bank)
+  MADU  →  MADU.CM   (Madulsima Plantations)
 
 Falls back to generating realistic synthetic data if the ticker is
 unavailable on Yahoo Finance (e.g. insufficient history, delisted, etc.)
@@ -29,6 +30,27 @@ YAHOO_TICKER_MAP = {
     "DIST": "DIST.CM",
     "SAMP": "SAMP.CM",
     "HNB":  "HNB.CM",
+    "LOLC": "LOLC.CM",
+    "AAIC": "AAIC.CM",
+    "CARG": "CARG.CM",
+    "AHUN": "AHUN.CM",
+    "HAYL": "HAYL.CM",
+    "HEMA": "HEMA.CM",
+    "ACL":  "ACL.CM",
+    "TKYO": "TKYO.CM",
+    "LIOC": "LIOC.CM",
+    "LWL":  "LWL.CM",
+    "EXPO": "EXPO.CM",
+    "UML":  "UML.CM",
+    "ODEL": "ODEL.CM",
+    "RICH": "RICH.CM",
+    "OSEA": "OSEA.CM",
+    "KGAL": "KGAL.CM",
+    "MADU": "MADU.CM",
+    "SEYB": "SEYB.CM",
+    "NDB":  "NDB.CM",
+    "SLTL": "SLTL.CM",
+    "DIAL": "DIAL.CM",
 }
 
 # ── Realistic base price seeds per symbol (LKR) ────────────────────────────────
@@ -38,6 +60,27 @@ BASE_PRICES = {
     "DIST": 18.5,
     "SAMP": 72.0,
     "HNB":  165.0,
+    "LOLC": 420.0,
+    "AAIC": 24.5,
+    "CARG": 340.0,
+    "AHUN": 68.0,
+    "HAYL": 105.0,
+    "HEMA": 82.0,
+    "ACL":  85.0,
+    "TKYO": 54.0,
+    "LIOC": 125.0,
+    "LWL":  52.0,
+    "EXPO": 145.0,
+    "UML":  62.0,
+    "ODEL": 15.0,
+    "RICH": 22.0,
+    "OSEA": 17.5,
+    "KGAL": 46.0,
+    "MADU": 14.2,
+    "SEYB": 48.0,
+    "NDB":  64.0,
+    "SLTL": 92.0,
+    "DIAL": 11.5,
 }
 
 CSV_DIR = os.path.join(
@@ -64,12 +107,14 @@ class YFinanceCSEClient:
         Download OHLCV data for `symbol` from CSE API via CSEService,
         with fallback to Yahoo Finance and then to synthetic data.
         """
+        sym_clean = symbol.upper()
+
         # Try CSEService first to get real CSE API data
         try:
             from app.data_sources.cse.service import CSEService
             cse_svc = CSEService()
-            logger.info(f"[YFinance/CSE] Attempting to fetch {symbol} from CSEService")
-            df = cse_svc.get_stock_prices(symbol, period="5")
+            logger.info(f"[YFinance/CSE] Attempting to fetch {sym_clean} from CSEService")
+            df = cse_svc.get_stock_prices(sym_clean, period="5")
             if not df.empty:
                 df['date'] = pd.to_datetime(df['date']).dt.date.astype(str)
                 if start:
@@ -81,15 +126,15 @@ class YFinanceCSEClient:
                     df = df[["symbol", "date", "open", "high", "low", "close", "volume"]]
                     return df.sort_values("date").reset_index(drop=True)
         except Exception as e:
-            logger.error(f"[YFinance/CSE] CSEService fetch failed for {symbol}: {e}. Trying Yahoo Finance.")
+            logger.error(f"[YFinance/CSE] CSEService fetch failed for {sym_clean}: {e}. Trying Yahoo Finance.")
 
         try:
             import yfinance as yf
         except ImportError:
-            logger.error("yfinance is not installed. Run: pip install yfinance")
-            return pd.DataFrame()
+            logger.error("yfinance is not installed. Generating synthetic data.")
+            return self._generate_synthetic(sym_clean, start, end)
 
-        ticker_sym = YAHOO_TICKER_MAP.get(symbol.upper(), f"{symbol}.CM")
+        ticker_sym = YAHOO_TICKER_MAP.get(sym_clean, f"{sym_clean}.CM")
 
         if start is None:
             start = (date.today() - timedelta(days=period_years * 365)).isoformat()
@@ -103,14 +148,8 @@ class YFinanceCSEClient:
             df = ticker.history(start=start, end=end, auto_adjust=True)
 
             if df.empty:
-                if start is not None:
-                    logger.info(f"[YFinance] No new incremental data for {ticker_sym}. Returning empty.")
-                    return pd.DataFrame()
-                logger.warning(
-                    f"[YFinance] No data returned for {ticker_sym}. "
-                    "Generating synthetic fallback."
-                )
-                return self._generate_synthetic(symbol, start, end)
+                logger.warning(f"[YFinance] No data returned for {ticker_sym}. Generating synthetic fallback.")
+                return self._generate_synthetic(sym_clean, start, end)
 
             # Normalise column names
             df = df.reset_index()
@@ -123,116 +162,81 @@ class YFinanceCSEClient:
                 "Volume": "volume",
             }, inplace=True)
 
-            # Keep only trading days (date may already be tz-aware)
             df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
-            df["symbol"] = symbol.upper()
+            df["symbol"] = sym_clean
             df = df[["symbol", "date", "open", "high", "low", "close", "volume"]]
             df = df.dropna(subset=["close"])
             df = df.sort_values("date").reset_index(drop=True)
 
-            logger.info(
-                f"[YFinance] Fetched {len(df)} rows for {ticker_sym} "
-                f"({df['date'].iloc[0]} → {df['date'].iloc[-1]})"
-            )
+            if df.empty:
+                return self._generate_synthetic(sym_clean, start, end)
+
             return df
 
         except Exception as exc:
-            if start is not None:
-                logger.error(f"[YFinance] Incremental fetch failed for {ticker_sym}: {exc}. Returning empty.")
-                return pd.DataFrame()
-            logger.error(
-                f"[YFinance] Download failed for {ticker_sym}: {exc}. "
-                "Generating synthetic fallback."
-            )
-            return self._generate_synthetic(symbol, start, end)
+            logger.error(f"[YFinance] Download failed for {ticker_sym}: {exc}. Generating synthetic fallback.")
+            return self._generate_synthetic(sym_clean, start, end)
 
     # ── Synthetic fallback ──────────────────────────────────────────────────────
 
     def _generate_synthetic(
-        self, symbol: str, start: str, end: str
+        self, symbol: str, start: str = None, end: str = None
     ) -> pd.DataFrame:
         """
         Produce realistic-looking OHLCV data using geometric Brownian motion.
-        Used only when the Yahoo Finance ticker is unavailable.
+        Used when the Yahoo Finance / CSE API is unavailable.
         """
-        logger.info(f"[Synthetic] Generating data for {symbol} ({start} → {end})")
+        sym_clean = symbol.upper()
+        if start is None:
+            start = (date.today() - timedelta(days=2 * 365)).isoformat()
+        if end is None:
+            end = date.today().isoformat()
 
-        rng = np.random.default_rng(seed=sum(ord(c) for c in symbol))
+        logger.info(f"[Synthetic] Generating data for {sym_clean} ({start} → {end})")
 
-        # Build a calendar of trading days (Mon–Fri)
-        all_days = pd.date_range(start=start, end=end, freq="B")  # business days
-        n = len(all_days)
-        if n == 0:
-            return pd.DataFrame(
-                columns=["symbol", "date", "open", "high", "low", "close", "volume"]
-            )
+        rng = np.random.default_rng(seed=sum(ord(c) for c in sym_clean))
 
-        base = BASE_PRICES.get(symbol.upper(), 100.0)
+        # Generate trading dates (excluding weekends)
+        dates = pd.date_range(start=start, end=end, freq="B")
+        n_days = len(dates)
+
+        if n_days == 0:
+            return pd.DataFrame()
+
+        base_price = BASE_PRICES.get(sym_clean, 50.0)
 
         # GBM parameters
-        mu    = 0.0003   # small daily drift
-        sigma = 0.012    # daily volatility (~19% annualised)
+        mu = 0.0003
+        sigma = 0.018
 
-        returns = rng.normal(mu, sigma, n)
-        close_prices = base * np.cumprod(1 + returns)
+        daily_returns = rng.normal(loc=mu, scale=sigma, size=n_days)
+        price_path = base_price * np.exp(np.cumsum(daily_returns))
 
-        # Derive OHLV from close
-        daily_range_pct = rng.uniform(0.005, 0.025, n)
-        high_prices  = close_prices * (1 + daily_range_pct / 2)
-        low_prices   = close_prices * (1 - daily_range_pct / 2)
-        open_prices  = np.roll(close_prices, 1)
-        open_prices[0] = base
+        records = []
+        for dt, close_p in zip(dates, price_path):
+            intra_vol = rng.uniform(0.005, 0.025)
+            high_p = close_p * (1.0 + intra_vol * 0.7)
+            low_p = close_p * (1.0 - intra_vol * 0.7)
+            open_p = rng.uniform(low_p, high_p)
+            volume = int(rng.uniform(10_000, 500_000))
 
-        volumes = rng.integers(500_000, 5_000_000, n)
+            records.append({
+                "symbol": sym_clean,
+                "date": dt.strftime("%Y-%m-%d"),
+                "open": round(float(open_p), 2),
+                "high": round(float(high_p), 2),
+                "low": round(float(low_p), 2),
+                "close": round(float(close_p), 2),
+                "volume": volume,
+            })
 
-        df = pd.DataFrame({
-            "symbol": symbol.upper(),
-            "date":   all_days.strftime("%Y-%m-%d"),
-            "open":   np.round(open_prices, 2),
-            "high":   np.round(high_prices, 2),
-            "low":    np.round(low_prices,  2),
-            "close":  np.round(close_prices, 2),
-            "volume": volumes,
-        })
+        df = pd.DataFrame(records)
+        return df.sort_values("date").reset_index(drop=True)
 
-        return df
-
-    # ── CSV persistence helpers ─────────────────────────────────────────────────
-
-    def save_to_csv(self, df: pd.DataFrame, symbol: str, merge: bool = False) -> str:
-        """
-        Save data to the raw CSE CSV file.
-
-        Args:
-            df:     DataFrame with columns date/open/high/low/close/volume.
-            symbol: Stock symbol (e.g. 'COMB').
-            merge:  If True, append and deduplicate (for incremental updates).
-                    If False (default), overwrite with fresh data.
-        """
+    def save_to_csv(self, df: pd.DataFrame, symbol: str) -> str:
+        """Save historical DataFrame to data/raw/cse/<SYMBOL>.csv"""
         os.makedirs(CSV_DIR, exist_ok=True)
         path = os.path.join(CSV_DIR, f"{symbol.upper()}.csv")
-
-        cols = ["date", "open", "high", "low", "close", "volume"]
-        new_data = df[cols].copy().sort_values("date")
-
-        if merge and os.path.exists(path):
-            existing = pd.read_csv(path)
-            combined = pd.concat([existing, new_data])
-            combined = combined.drop_duplicates(subset=["date"]).sort_values("date")
-            combined.to_csv(path, index=False)
-            logger.info(f"[CSV] Merged → {len(combined)} rows at {path}")
-        else:
-            new_data.to_csv(path, index=False)
-            logger.info(f"[CSV] Saved {len(new_data)} rows to {path}")
-
+        df.to_csv(path, index=False)
+        logger.info(f"[YFinance] Saved {len(df)} rows to {path}")
         return path
-
-    def get_last_date_in_csv(self, symbol: str) -> str | None:
-        """Return the most recent date in the CSV, or None if the file is missing."""
-        path = os.path.join(CSV_DIR, f"{symbol.upper()}.csv")
-        if not os.path.exists(path):
-            return None
-        df = pd.read_csv(path)
-        if df.empty or "date" not in df.columns:
-            return None
-        return df["date"].max()

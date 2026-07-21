@@ -1,219 +1,168 @@
 # Colombo Stock Exchange (CSE) Market Intelligence Platform 📈🏛️
 
-A cloud-ready, intelligent analytics and forecasting platform that integrates stock prices from the Colombo Stock Exchange (CSE), macroeconomic indicators from the Central Bank of Sri Lanka (CBSL), and public search interest from Google Trends to discover market relationships and build forecasting datasets.
+An intelligent, cloud-ready stock market analytics and forecasting platform designed to integrate equities data from the Colombo Stock Exchange (CSE), macroeconomic indicators from the Central Bank of Sri Lanka (CBSL), and public sentiment interest from Google Trends.
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 🌟 Key Features
 
-Our system uses a decoupled, modular architecture to separate ingestion, storage, data engineering, and visualization:
+- **Automated Data Ingestion**: Robust, resilient ingestion pipelines connecting to CSE APIs, CBSL macroeconomic datasets, and alternative web search metrics.
+- **Cross-Frequency Alignment**: Custom time-series integration engine leveraging `pd.merge_asof` to synchronize high-frequency daily equities data with low-frequency monthly economic indicators.
+- **Technical Indicators Engine**: Calculates standard financial metrics including RSI (14), SMA (20/50), MACD, and rolling daily return volatility.
+- **Time-Series Forecasting**: Machine learning models designed for stock trend predictions over customizable validation horizons.
+- **Explainable AI (XAI)**: SHAP feature importance visualizations highlighting macroeconomic impact on price movements.
+- **Interactive UI Dashboard**: React-powered dashboard providing visual analytics, stock comparisons, and system status metrics.
+
+---
+
+## 🏗️ System Architecture
 
 ```text
-               ┌────────────────────────────────────────────────────────┐
-               │                     DATA SOURCES                       │
-               │  ┌─────────────────┐ ┌───────────────┐ ┌────────────┐  │
-               │  │  CSE REST API   │ │   CBSL CSV    │ │Google Trends│  │
-               │  └────────┬────────┘ └───────┬───────┘ └──────┬──────┘  │
-               └───────────┼──────────────────┼────────────────┼────────┘
-                           │                  │                │
-                           ▼                  │                │
-               ┌────────────────────────┐     │                │
-               │   Ingestion Service    │     │                │
-               │ (CSE Client & Parser)  │     │                │
-               └───────────┬────────────┘     │                │
-                           │                  │                │
-                           ▼                  ▼                ▼
-               ┌────────────────────────────────────────────────────────┐
-               │                     STORAGE LAYER                      │
-               │               ┌────────────────────────┐               │
-               │               │   SQLite (cse.db)      │               │
-               │               │   - stock_prices       │               │
-               │               └──────────┬─────────────┘               │
-               │                          │                             │
-               │                          ▼                             │
-               │               ┌────────────────────────┐               │
-               │               │      Raw Archives      │               │
-               │               │   - cse/ fallback CSVs │               │
-               │               │   - cbsl/ macro CSVs   │               │
-               │               │   - trends/ search CSV │               │
-               │               └──────────┬─────────────┘               │
-               └──────────────────────────┼─────────────────────────────┘
-                                          │
-                                          ▼
-               ┌────────────────────────────────────────────────────────┐
-               │               DATA ENGINEERING & PIPELINE              │
-               │  ┌──────────────────────────────────────────────────┐  │
-               │  │ Preprocessing Pipeline                           │  │
-               │  │  - Cleaner (Deduplication, sorting, .ffill())     │  │
-               │  │  - Indicator Builder (Returns, SMAs, RSI, MACD)  │  │
-               │  └───────────────────────┬──────────────────────────┘  │
-               │                          │                             │
-               │                          ▼                             │
-               │  ┌──────────────────────────────────────────────────┐  │
-               │  │ Data Merger Service                              │  │
-               │  │  - pd.merge_asof() alignment (Daily+Weekly+Month)│  │
-               │  └───────────────────────┬──────────────────────────┘  │
-               └──────────────────────────┼─────────────────────────────┘
-                                          │
-                                          ▼
-               ┌────────────────────────────────────────────────────────┐
-               │                       API LAYER                        │
-               │  ┌──────────────────────────────────────────────────┐  │
-               │  │ FastAPI REST Router (/api/v1/)                   │  │
-               │  │  - /health                                       │  │
-               │  │  - /stocks/{symbol} & /stocks/{symbol}/ingest     │  │
-               │  │  - /analytics/stocks/{symbol}                    │  │
-               │  │  - /analytics/stocks/{symbol}/integrated         │  │
-               │  └───────────────────────┬──────────────────────────┘  │
-               └──────────────────────────┼─────────────────────────────┘
-                                          │
-                                          ▼
-               ┌────────────────────────────────────────────────────────┐
-               │                     FRONTEND UI                        │
-               │  ┌──────────────────────────────────────────────────┐  │
-               │  │ React + Vite Client Dashboard                    │  │
-               │  │  - Axios Client Service                          │  │
-               │  │  - Stock Analytics Table View (Gainers/Losers)  │  │
-               │  └──────────────────────────────────────────────────┘  │
-               └────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                     DATA SOURCES                       │
+│  ┌─────────────────┐ ┌───────────────┐ ┌────────────┐  │
+│  │  CSE REST API   │ │   CBSL CSV    │ │Google Trends│ │
+│  └────────┬────────┘ └───────┬───────┘ └──────┬──────┘  │
+└───────────┼──────────────────┼────────────────┼────────┘
+            │                  │                │
+            ▼                  ▼                ▼
+┌────────────────────────────────────────────────────────┐
+│               INGESTION & STORAGE LAYER                │
+│                 SQLite Database (cse.db)               │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│               DATA ENGINEERING & PIPELINE              │
+│  - Preprocessing & Technical Indicators (RSI, MACD)    │
+│  - Asynchronous Cross-Frequency Data Merger            │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                 FASTAPI REST API LAYER                 │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                  REACT FRONTEND UI                     │
+└────────────────────────────────────────────────────────┘
 ```
+
+Detailed architectural specifications are available in [`docs/architecture.md`](file:///c:/Ongoing%20Projects/New%20folder/docs/architecture.md).
 
 ---
 
 ## 📂 Project Directory Structure
 
 ```text
-backend/
-├── app/
-│   ├── api/
-│   │   ├── __init__.py          # API Routers initialization
-│   │   └── v1/
-│   │       ├── __init__.py      # v1 router bindings
-│   │       ├── health.py        # Health status checks
-│   │       ├── stocks.py        # Ingestion triggers & DB retrievals
-│   │       └── analytics.py     # Indicators & Aligned merges
-│   │
-│   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py            # Pydantic Settings & CORS rules
-│   │
-│   ├── data_sources/
-│   │   ├── base.py              # Base DataSource Interface
-│   │   ├── cse/
-│   │   │   ├── client.py        # POST REST endpoints resolver
-│   │   │   ├── csv_client.py    # Local CSV backups
-│   │   │   ├── parser.py        # Timestamp parsing & open price alignment
-│   │   │   └── service.py       # Dual client failover coordinator
-│   │   ├── cbsl/
-│   │   │   ├── client.py        # Macro indicators loader
-│   │   │   ├── parser.py        # DateTime formatting
-│   │   │   └── service.py       # CBSL pipeline service
-│   │   └── trends/
-│   │       ├── client.py        # pytrends client & local fallbacks
-│   │       └── service.py       # Trends rate-limit failover service
-│   │
-│   ├── database/
-│   │   ├── __init__.py
-│   │   ├── connection.py        # SQLAlchemy engine & session pool
-│   │   └── models.py            # StockPrice mapping schema
-│   │
-│   ├── integration/
-│   │   ├── __init__.py
-│   │   └── merger.py            # pd.merge_asof alignment layer
-│   │
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   ├── cleaner.py           # Deduplication & chronological fills
-│   │   ├── indicators.py        # SMA, RSI, MACD math computations
-│   │   └── pipeline.py          # Aggregated cleaning/feature builders
-│   └── main.py                  # FastAPI initialization & table hooks
-│
-├── data/
-│   └── raw/
-│       ├── cse/                 # COMB.csv & JKH.csv fallback datasets
-│       ├── cbsl/                # macro_indicators.csv dataset
-│       └── trends/              # trends_cse.csv dataset
-│
-├── requirements.txt             # Backend dependency list
-└── main.py                      # Root server launcher
+.
+├── backend/
+│   ├── app/
+│   │   ├── api/             # REST API routers (/api/v1/)
+│   │   ├── analytics/       # Technical indicators & statistical correlation engines
+│   │   ├── forecasting/     # Time-series forecasting models
+│   │   ├── explainability/  # SHAP feature importance explainers
+│   │   ├── preprocessing/   # Data cleaning & time-alignment merger
+│   │   ├── data_sources/    # Modular CSE, CBSL, Trends interfaces
+│   │   ├── database/        # SQLAlchemy engine & models
+│   │   ├── services/        # Orchestration & ingestion services
+│   │   ├── core/            # App configurations & CORS settings
+│   │   └── main.py          # FastAPI application entrypoint
+│   ├── tests/               # Automated Pytest suite
+│   ├── main.py              # Server execution script
+│   └── requirements.txt     # Python dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Reusable React UI components
+│   │   ├── pages/           # Dashboard views & analytics pages
+│   │   ├── services/        # API HTTP client wrappers
+│   │   └── App.jsx          # Main application router
+│   ├── package.json         # Node dependencies
+│   └── vite.config.js       # Vite configuration
+├── docs/                    # System & API documentation
+│   ├── architecture.md
+│   ├── api.md
+│   ├── database.md
+│   ├── forecasting.md
+│   └── deployment.md
+├── run.txt                  # Quick start command reference
+└── README.md                # Project README
 ```
 
 ---
 
-## 💾 Storage Layer (Database Schema)
+## ⚡ Quick Start & Installation
 
-### Table: `stock_prices`
-| Column Name  | Data Type | Constraints               | Description                                  |
-|--------------|-----------|---------------------------|----------------------------------------------|
-| `id`         | Integer   | Primary Key, Indexed      | Auto-incrementing identifier                 |
-| `symbol`     | String    | Indexed, Not Null         | Stock Ticker (e.g., `COMB.N0000`)            |
-| `date`       | String    | Indexed, Not Null         | Trading Date (`YYYY-MM-DD`)                  |
-| `open`       | Float     | Not Null                  | Day open price (aligned from previous close) |
-| `high`       | Float     | Not Null                  | High price during transaction day            |
-| `low`        | Float     | Not Null                  | Low price during transaction day             |
-| `close`      | Float     | Not Null                  | Close price (primary benchmark price)        |
-| `volume`     | Integer   | Not Null                  | Daily traded transaction volume              |
-| `created_at` | DateTime  | Default: UTC Now          | Timestamp of database record insertion        |
-
----
-
-## ⚡ Data Engineering & Merging Math
-
-### 1. Technical Indicators Calculation
-- **Daily Return**: $R_t = \frac{C_t - C_{t-1}}{C_{t-1}}$
-- **SMA 20 & 50**: Rolling averages over the past 20 and 50 trading days: $\text{SMA}_n = \frac{1}{n} \sum_{i=0}^{n-1} C_{t-i}$
-- **RSI (14)**: Relative Strength Index measuring speed and changes of price movements.
-- **MACD**: Moving Average Convergence Divergence ($12$-day EMA minus $26$-day EMA).
-- **Volatility**: 20-day rolling standard deviation of daily returns: $\sigma_{20} = \sqrt{\frac{1}{19} \sum_{i=0}^{19} (R_{t-i} - \bar{R})^2}$
-
-### 2. Time-Alignment Merger (`pd.merge_asof`)
-Macroeconomic data is monthly and search trends are weekly. Joining them directly on stock dates creates missing rows. Our custom `DataMerger` solves this by:
-1. Converting all date columns to `datetime64[ns]`.
-2. Sorting all frames chronologically.
-3. Performing `pd.merge_asof(..., direction="backward")` to link each stock price day to the *latest available preceding* economic and search query data points.
-4. Applying `.bfill()` for data preceding the first matched record.
-
----
-
-## 📡 REST API Endpoints
-
-| Method | Endpoint | Description | Payload / Response |
-|--------|----------|-------------|--------------------|
-| `GET`  | `/api/v1/health` | Service health check | `{"status": "healthy"}` |
-| `GET`  | `/api/v1/stocks/{symbol}` | Fetch stock records from database | `{"symbol": "COMB", "data": [...]}` |
-| `POST` | `/api/v1/stocks/{symbol}/ingest` | Trigger ingestion pipeline to fetch from CSE | `{"symbol": "COMB", "records_added": 242}` |
-| `GET`  | `/api/v1/analytics/stocks/{symbol}` | Fetch latest technical indicators | `{"symbol": "COMB", "features": {"rsi": 33.9, ...}}` |
-| `GET`  | `/api/v1/analytics/stocks/{symbol}/integrated` | Fetch unified daily macroeconomic dataset | `{"symbol": "COMB", "data": [{"date": "...", "inflation": 5.2, "usd_lkr": 295.0, ...}]}` |
-
----
-
-## 🚀 Getting Started
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
 
 ### 1. Backend Setup
-1. Open a terminal in the `backend/` directory.
-2. Initialize virtual environment and activate:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Run the Uvicorn server:
-   ```bash
-   python main.py
-   ```
-   *Note: Server binds to `http://127.0.0.1:8000`. Swagger documentation is available at `http://127.0.0.1:8000/docs`.*
+
+```bash
+cd backend
+
+# Create and activate virtual environment
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+# source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch FastAPI backend server
+python main.py
+```
+The REST API will be accessible at `http://127.0.0.1:8000`. API documentation is automatically hosted at `http://127.0.0.1:8000/docs`.
 
 ### 2. Frontend Setup
-1. Open a terminal in the `frontend/` directory.
-2. Install npm packages:
-   ```bash
-   npm install
-   ```
-3. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-   *Note: Client binds to `http://localhost:5173/`.*
+
+```bash
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+The React UI will run at `http://localhost:5173`.
+
+---
+
+## 📡 REST API Summary
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET`  | `/api/v1/health` | Health check endpoint |
+| `GET`  | `/api/v1/stocks/{symbol}` | Fetch equities price data |
+| `POST` | `/api/v1/stocks/{symbol}/ingest` | Trigger symbol data ingestion |
+| `GET`  | `/api/v1/analytics/stocks/{symbol}` | Compute technical indicator series |
+| `GET`  | `/api/v1/analytics/stocks/{symbol}/integrated` | Integrated stock + macro dataset |
+| `GET`  | `/api/v1/forecasting/{symbol}` | Time-series prediction horizons |
+| `GET`  | `/api/v1/explanations/{symbol}` | SHAP feature attribution metrics |
+
+Full REST API documentation is available in [`docs/api.md`](file:///c:/Ongoing%20Projects/New%20folder/docs/api.md).
+
+---
+
+## 🧪 Testing & Verification
+
+Run backend unit and integration tests:
+
+```bash
+cd backend
+pytest tests/
+```
+
+---
+
+## 🛠️ Technology Stack
+
+- **Backend**: Python, FastAPI, SQLAlchemy, Pydantic, Pandas, NumPy
+- **Machine Learning & Stats**: Statsmodels, XGBoost, Scikit-Learn, SHAP, Ta
+- **Frontend**: React, TypeScript/JavaScript, Vite, Chart.js / Recharts
+- **Database**: SQLite (Cloud-ready for PostgreSQL / GCP BigQuery)

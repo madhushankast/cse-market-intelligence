@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import forecastService from "../services/forecastService";
 import PredictionExplanationCard from "../components/explainability/PredictionExplanationCard";
+import SectorStockSelector from "../components/SectorStockSelector";
 
 const SYMBOLS = ["COMB", "JKH", "DIST", "SAMP", "HNB"];
 
@@ -163,24 +164,40 @@ export default function Forecast() {
   const yMin = prices.length > 0 ? Math.floor(Math.min(...prices) * 0.96) : "auto";
   const yMax = prices.length > 0 ? Math.ceil(Math.max(...prices) * 1.04) : "auto";
 
-  // Group 30 outlook elements by weeks (5 days per row = 6 rows)
-  const groupedOutlook = (() => {
-    if (!data?.forecast_dates) return [];
-    const chunks = [];
+  // Aggregate 30-day daily forecast into week-by-week summaries
+  const weeklyOutlook = (() => {
+    if (!data?.forecast_dates || !data?.forecast_values) return [];
     const dates = data.forecast_dates;
-    const values = data.forecast_values || [];
+    const values = data.forecast_values;
+    const weeks = [];
+
     for (let i = 0; i < dates.length; i += 5) {
-      chunks.push(
-        dates.slice(i, i + 5).map((date, idx) => {
-          const globalIdx = i + idx;
-          const price = values[globalIdx];
-          const prevPrice = globalIdx > 0 ? values[globalIdx - 1] : data.current_price;
-          const isUp = price >= prevPrice;
-          return { date, price, isUp };
-        })
-      );
+      const weekDates = dates.slice(i, i + 5);
+      const weekValues = values.slice(i, i + 5);
+      if (weekDates.length === 0) continue;
+
+      const startDate = weekDates[0];
+      const endDate = weekDates[weekDates.length - 1];
+      const prevPrice = i > 0 ? values[i - 1] : (data.current_price || weekValues[0]);
+      const endPrice = weekValues[weekValues.length - 1];
+      const minPrice = Math.min(...weekValues);
+      const maxPrice = Math.max(...weekValues);
+      const change = endPrice - prevPrice;
+      const changePercent = prevPrice ? (change / prevPrice) * 100 : 0;
+
+      weeks.push({
+        weekNum: Math.floor(i / 5) + 1,
+        startDate,
+        endDate,
+        endPrice,
+        minPrice,
+        maxPrice,
+        change,
+        changePercent,
+        isUp: change >= 0,
+      });
     }
-    return chunks;
+    return weeks;
   })();
 
   return (
@@ -196,17 +213,7 @@ export default function Forecast() {
               <h2 className="fc-title">Price Forecast</h2>
               <p className="fc-subtitle">Multi-model 30-day price predictions with historical context</p>
             </div>
-            <div className="fc-symbol-picker">
-              {SYMBOLS.map((s) => (
-                <button
-                  key={s}
-                  className={`fc-symbol-btn ${symbol === s ? "active" : ""}`}
-                  onClick={() => setSymbol(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <SectorStockSelector selectedSymbol={symbol} onSelect={(newSym) => setSymbol(newSym)} />
           </div>
 
           {/* Loading / Error */}
@@ -230,7 +237,12 @@ export default function Forecast() {
           {data && !loading && (
             <div className="fc-layout-container">
               {/* SECTION A: Overview Hero Row */}
-              <div className="section-header">Overview</div>
+              <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Overview</span>
+                <Link to="/compare" className="fc-transparency-link">
+                  See how this model is calculated &rarr;
+                </Link>
+              </div>
               <div className="fc-kpi-row-restructured">
                 <KpiCard
                   label="Current Price"
@@ -252,10 +264,10 @@ export default function Forecast() {
                   }
                 />
                 <KpiCard
-                  label="Directional Accuracy"
-                  value={confidence ? `${(confidence * 100).toFixed(1)}%` : "—"}
-                  sub="Hold-out test accuracy"
-                  accent="#f59e0b"
+                  label="Model Confidence"
+                  value={data.confidence_label || (confidence >= 0.65 ? "High Confidence" : confidence >= 0.55 ? "Moderate Confidence" : "Low Confidence")}
+                  sub={`Derived from ${bestInfo.label} model accuracy`}
+                  accent={data.confidence_label === "High Confidence" || confidence >= 0.65 ? "#16c784" : data.confidence_label === "Moderate Confidence" || confidence >= 0.55 ? "#f59e0b" : "#ea3943"}
                 />
                 <KpiCard
                   label="Data Points Used"
@@ -346,75 +358,30 @@ export default function Forecast() {
                 </ResponsiveContainer>
               </div>
 
-              {/* SECTION C: Model Comparison Table */}
-              <div className="section-header">Model Performance</div>
-              <div className="fc-model-table-card">
-                <table className="fc-performance-table">
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left" }}>Model Name</th>
-                      <th>30D Forecast Value</th>
-                      <th>Directional Accuracy</th>
-                      <th>RMSE</th>
-                      <th style={{ textAlign: "right" }}>Rating</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modelRows.map((m) => {
-                      const info  = MODEL_COLORS[m.key] ?? MODEL_COLORS.baseline;
-                      const isBest = m.key === bestKey;
-                      return (
-                        <tr key={m.key} className={`fc-model-table-row ${isBest ? "winning-row" : ""}`} style={{ "--model-border": info.border }}>
-                          <td style={{ textAlign: "left" }}>
-                            <div className="fc-model-name-wrapper">
-                              <span className="fc-model-dot" style={{ background: info.border }} />
-                              <span className="fc-model-name-label">{info.label}</span>
-                              {isBest && <span className="fc-best-badge-tab">Best</span>}
-                            </div>
-                          </td>
-                          <td className="fc-td-val" style={{ color: info.text }}>
-                            {m.next_day_value != null ? `LKR ${m.next_day_value.toFixed(2)}` : "—"}
-                          </td>
-                          <td className="fc-td-val">
-                            {m.direction_accuracy != null ? `${(m.direction_accuracy * 100).toFixed(1)}%` : "—"}
-                          </td>
-                          <td className="fc-td-val">
-                            {m.rmse != null ? m.rmse.toFixed(2) : "—"}
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            <Stars rating={m.star_rating ?? 0} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <p className="fc-footnote" style={{ marginTop: "1rem" }}>
-                  Models ranked by directional accuracy on a 20% hold-out test set. Confidence is derived from directional sign agreement.
-                </p>
-              </div>
-
-              {/* SECTION D: 30-Day Price Outlook Grouped */}
-              <div className="section-header">30-Day Outlook</div>
-              {data.forecast_dates?.length > 0 && (
-                <div className="fc-forecast-table-card">
-                  <div className="fc-outlook-grouped-list">
-                    {groupedOutlook.map((week, weekIdx) => (
-                      <div key={weekIdx} className="fc-outlook-week-row">
-                        <div className="week-label-indicator">Week {weekIdx + 1}</div>
-                        <div className="fc-forecast-dates-row">
-                          {week.map((day, dayIdx) => (
-                            <div key={dayIdx} className="fc-forecast-date-cell-row">
-                              <span className="fc-date-label">{day.date}</span>
-                              <span className="fc-date-value" style={{ color: day.isUp ? "var(--gain)" : "var(--loss)" }}>
-                                {day.price != null ? `LKR ${day.price.toFixed(2)}` : "—"}
-                              </span>
-                            </div>
-                          ))}
+              {/* SECTION D: 30-Day Price Outlook Week-by-Week */}
+              <div className="section-header">30-Day Outlook (Weekly Summary)</div>
+              {weeklyOutlook.length > 0 && (
+                <div className="fc-weekly-list">
+                  {weeklyOutlook.map((week) => (
+                    <div key={week.weekNum} className="fc-weekly-row">
+                      <div className="fc-weekly-row-left">
+                        <span className="fc-week-badge">Week {week.weekNum}</span>
+                        <span className="fc-week-dates">{week.startDate} &rarr; {week.endDate}</span>
+                      </div>
+                      <div className="fc-weekly-row-right">
+                        <div className="fc-weekly-range">
+                          <span>Min: <strong>LKR {week.minPrice.toFixed(2)}</strong></span>
+                          <span>Max: <strong>LKR {week.maxPrice.toFixed(2)}</strong></span>
+                        </div>
+                        <div className="fc-weekly-main-price">
+                          <span className="fc-weekly-price">LKR {week.endPrice.toFixed(2)}</span>
+                          <span className={`fc-weekly-change ${week.isUp ? "gain" : "loss"}`}>
+                            {week.change >= 0 ? "+" : ""}{week.change.toFixed(2)} ({week.changePercent >= 0 ? "+" : ""}{week.changePercent.toFixed(2)}%)
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

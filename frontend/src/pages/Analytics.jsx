@@ -11,6 +11,7 @@ import {
   ReferenceLine
 } from "recharts";
 import api from "../services/api";
+import SectorStockSelector from "../components/SectorStockSelector";
 import "./Analytics.css";
 
 const SYMBOLS = ["COMB", "JKH", "DIST", "SAMP", "HNB"];
@@ -374,22 +375,11 @@ export default function Analytics() {
 
       <main className="app-main">
         <div className="analytics-page">
-
-          {/* ── Page Header & Ticker Tabs ── */}
+          {/* ── Page Header & Sector/Stock Selector ── */}
           <div className="analytics-page-title-row">
             <h2>Market Relationships &amp; Analytics</h2>
             <p className="subtitle">Statistical correlations, leading indicators, and technical signals</p>
-            <div className="symbol-picker">
-              {SYMBOLS.map((s) => (
-                <button
-                  key={s}
-                  className={`symbol-btn ${symbol === s ? "active" : ""}`}
-                  onClick={() => setSymbol(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <SectorStockSelector selectedSymbol={symbol} onSelect={(newSym) => setSymbol(newSym)} />
           </div>
 
           {/* ── Section A, B, C ── */}
@@ -470,92 +460,6 @@ export default function Analytics() {
                 ) : (
                   <p className="no-data-hint">No correlation data available for {symbol}.</p>
                 )}
-              </div>
-
-              {/* Causality and Trends side-by-side */}
-              <div className="causality-trends-split-row">
-                {/* Granger Causality */}
-                <div className="analytics-card split-half">
-                  <h3>Granger Causality &mdash; Leading Indicators</h3>
-                  <p className="card-desc">Tests whether past values of alternative data help predict stock price returns.</p>
-                  {causality && causality.length > 0 ? (
-                    <div className="table-responsive">
-                      <table className="causality-table">
-                        <thead>
-                          <tr>
-                            <th>Indicator</th>
-                            <th>Lag</th>
-                            <th>p-value</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {causality.map((c) => (
-                            <tr key={c.variable}>
-                              <td className="variable-cell">{VAR_LABELS[c.variable] || c.variable}</td>
-                              <td>{c.best_lag} days</td>
-                              <td>{c.p_value.toFixed(4)}</td>
-                              <td>
-                                <span className={`causality-badge ${c.significant ? "sig" : "non-sig"}`}>
-                                  {c.significant ? "Significant" : "Not Significant"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="empty-state-container">
-                      <p className="no-data-hint">No causality indicators for {symbol}.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Cross Correlation / Lag */}
-                <div className="analytics-card split-half">
-                  <h3>Google Trends Lag Analysis</h3>
-                  <p className="card-desc">Peak correlation at positive lags indicates search interest leads stock movement by L days.</p>
-                  {lagData.trend_score && lagData.trend_score.length > 0 ? (
-                    <div style={{ width: "100%", height: 230 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={lagData.trend_score} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                          <XAxis
-                            dataKey="lag"
-                            tick={{ fill: "#7a8fa6", fontSize: 10 }}
-                            label={{ value: "Lag (days)", position: "insideBottom", offset: -2, fill: "#7a8fa6", fontSize: 10 }}
-                          />
-                          <YAxis
-                            tick={{ fill: "#7a8fa6", fontSize: 10 }}
-                            domain={[-1, 1]}
-                            label={{ value: "Correlation", angle: -90, position: "insideLeft", fill: "#7a8fa6", fontSize: 10 }}
-                          />
-                          <Tooltip
-                            contentStyle={{ background: "#111c2d", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px" }}
-                            labelStyle={{ color: "#e2e8f0" }}
-                            itemStyle={{ color: "#3b82f6" }}
-                            formatter={(val) => [val.toFixed(3), "Correlation"]}
-                          />
-                          <ReferenceLine y={0} stroke="#3d4f63" strokeDasharray="3 3" />
-                          <ReferenceLine x={0} stroke="#3d4f63" strokeDasharray="3 3" />
-                          <Line
-                            type="monotone"
-                            dataKey="correlation"
-                            name="Lag correlation"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            dot={{ r: 3, fill: "#3b82f6" }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="empty-state-container">
-                      <p className="no-data-hint">No lag analytics data available.</p>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           )}
