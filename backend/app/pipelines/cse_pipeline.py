@@ -18,8 +18,9 @@ class CSEPipeline:
 
     def run(self, symbols: list[str] = None) -> int:
         if not symbols:
-            # Common symbols on the CSE
-            symbols = ["DIAL", "COMB", "SAMP", "JKH", "HNB"]
+            # Import the full set of tracked symbols from the yfinance client configuration
+            from app.data_sources.cse.yfinance_client import YAHOO_TICKER_MAP
+            symbols = list(YAHOO_TICKER_MAP.keys())
 
         total_inserted = 0
         for symbol in symbols:
@@ -42,7 +43,9 @@ class CSEPipeline:
                     sym = row["symbol"]
                     dt = row["date"]
                     # Skip non‑trading days
-                    if not is_trading_day(dt):
+                    from datetime import datetime
+                    dt_obj = datetime.strptime(dt, "%Y-%m-%d").date() if isinstance(dt, str) else dt
+                    if not is_trading_day(dt_obj):
                         continue
                     if not self.repo.check_exists(sym, dt):
                         record = StockPrice(

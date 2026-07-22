@@ -1,0 +1,37 @@
+name: Daily CSE Ingestion and Model Training
+
+on:
+  schedule:
+    - cron: '0 13 * * 1-5' # Runs at 18:30 IST (13:00 UTC) every weekday on market close
+  workflow_dispatch:      # Allows manual trigger
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Execute Daily Pipeline Update
+        run: |
+          cd backend
+          python -c "from app.database.connection import create_tables, SessionLocal; create_tables(); db = SessionLocal(); from app.pipelines.daily_pipeline import DailyPipelineOrchestrator; orch = DailyPipelineOrchestrator(db); print(orch.run())"
+
+      - name: Commit Updated Database
+        run: |
+          git config --global user.name "Github Action Bot"
+          git config --global user.email "action@github.com"
+          git add backend/cse.db backend/data/
+          git commit -m "auto: daily stock ingestion & model updates" || exit 0
+          git push

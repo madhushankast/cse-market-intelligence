@@ -177,12 +177,12 @@ def _build_reasons_warnings(signals: List[Dict], rsi_val: Optional[float],
         elif s < 0:
             warnings.append(sig["label"])
 
-    # Extra RSI warnings
+    # Extra RSI warnings (only for transition zones to prevent duplicates with main scorer)
     if rsi_val is not None:
-        if rsi_val > 65:
+        if 65 < rsi_val < 70:
             warnings.append(f"RSI at {rsi_val:.1f} — approaching overbought territory (>70)")
-        if rsi_val < 35:
-            reasons.append(f"RSI at {rsi_val:.1f} — potentially oversold, watch for reversal")
+        elif 30 <= rsi_val < 35:
+            reasons.append(f"RSI at {rsi_val:.1f} — approaching oversold territory (<30), watch for potential reversal")
 
     # Bollinger extras
     bb_pos = bollinger.get("position", "")
