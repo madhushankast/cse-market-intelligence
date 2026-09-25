@@ -1,21 +1,26 @@
-#install dependencies
-.venv\Scripts\pip install -r requirements.txt
-
-#create virtual environment
+# create virtual environment (from project root)
 python -m venv .venv
 
-#run virtual environmentk
+# activate virtual environment:
+# From root:
 .venv\Scripts\activate
+# From backend directory:
+..\.venv\Scripts\activate
 
-.venv\Scripts\python main.py
+# install dependencies
+# From backend directory:
+..\.venv\Scripts\pip install -r requirements.txt
 
-#run frontend
+# run backend
+# Option A (from backend directory):
+..\.venv\Scripts\python -m uvicorn main:app --reload --port 8000
+# Option B (if .venv is already activated in this terminal):
+python -m uvicorn main:app --reload --port 8000
+
+# run frontend (from frontend directory)
 npm install
 npm run dev
 
-#run backend
-python -m uvicorn main:app --reload --port 8000
-
-#update data manually
-.venv\Scripts\python -m app.ingestion.daily_update
+# update data manually (from backend directory)
+..\.venv\Scripts\python -m app.ingestion.daily_update
 

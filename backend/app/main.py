@@ -54,19 +54,19 @@ async def lifespan(app: FastAPI):
     logger.info("[Startup] Auto-ingest thread launched.")
     
     # Start APScheduler for daily weekday updates
-    from app.ingestion.scheduler import start_scheduler
     try:
+        from app.ingestion.scheduler import start_scheduler
         start_scheduler()
     except Exception as exc:
-        logger.error(f"[Startup] Failed to start scheduler: {exc}")
+        logger.warning(f"[Startup] Scheduler not available or failed to start: {exc}")
         
     yield
     # ── Shutdown ──
-    from app.ingestion.scheduler import shutdown_scheduler
     try:
+        from app.ingestion.scheduler import shutdown_scheduler
         shutdown_scheduler()
     except Exception as exc:
-        logger.error(f"[Shutdown] Failed to stop scheduler: {exc}")
+        logger.warning(f"[Shutdown] Failed to stop scheduler: {exc}")
 
 
 app = FastAPI(

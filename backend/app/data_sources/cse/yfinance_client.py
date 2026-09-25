@@ -20,6 +20,7 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -233,10 +234,34 @@ class YFinanceCSEClient:
         df = pd.DataFrame(records)
         return df.sort_values("date").reset_index(drop=True)
 
+    def get_last_date_in_csv(self, symbol: str) -> Optional[str]:
+        """Return the most recent date string ('YYYY-MM-DD') present in data/raw/cse/<SYMBOL>.csv, or None."""
+        path = os.path.join(CSV_DIR, f"{symbol.upper()}.csv")
+        if not os.path.exists(path):
+            return None
+        try:
+            df = pd.read_csv(path, usecols=["date"])
+            if df.empty or "date" not in df.columns:
+                return None
+            return str(df["date"].dropna().max())
+        except Exception as exc:
+            logger.warning(f"[YFinance] Could not read CSV for {symbol}: {exc}")
+            return None
+
     def save_to_csv(self, df: pd.DataFrame, symbol: str) -> str:
-        """Save historical DataFrame to data/raw/cse/<SYMBOL>.csv"""
+        """Save historical DataFrame to data/raw/cse/<SYMBOL>.csv, merging if already exists."""
         os.makedirs(CSV_DIR, exist_ok=True)
         path = os.path.join(CSV_DIR, f"{symbol.upper()}.csv")
+        if os.path.exists(path):
+            try:
+                existing = pd.read_csv(path)
+                combined = pd.concat([existing, df], ignore_index=True)
+                combined = combined.drop_duplicates(subset=["date"]).sort_values("date").reset_index(drop=True)
+                combined.to_csv(path, index=False)
+                logger.info(f"[YFinance] Appended/updated {len(combined)} rows in {path}")
+                return path
+            except Exception as exc:
+                logger.warning(f"[YFinance] Could not merge with existing CSV {path}: {exc}")
         df.to_csv(path, index=False)
         logger.info(f"[YFinance] Saved {len(df)} rows to {path}")
         return path

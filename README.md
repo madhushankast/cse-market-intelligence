@@ -85,7 +85,8 @@ Detailed architectural specifications are available in [`docs/architecture.md`](
 │   ├── api.md
 │   ├── database.md
 │   ├── forecasting.md
-│   └── deployment.md
+│   ├── deployment.md
+│   └── interview_preparation_guide.md
 ├── run.txt                  # Quick start command reference
 └── README.md                # Project README
 ```

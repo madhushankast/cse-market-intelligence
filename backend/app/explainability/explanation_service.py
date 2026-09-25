@@ -251,7 +251,7 @@ class ExplanationService:
                 model=exp.model,
                 horizon=horizon,
                 expected_return=exp.prediction,
-                forecast_values=json.dumps(exp.top_features, default=lambda x: x.dict() if hasattr(x, "dict") else str(x)),
+                forecast_values=json.dumps(exp.top_features, default=lambda x: x.model_dump() if hasattr(x, "model_dump") else (x.dict() if hasattr(x, "dict") else str(x))),
                 explanation_json=json.dumps(exp.factors)
             )
             db.add(forecast_log)

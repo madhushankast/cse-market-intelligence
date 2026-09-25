@@ -88,16 +88,16 @@ class BulkIngestionService:
                     logger.info(f"[Refresh] {sym}: no CSV found, running full ingest.")
                     df = self.yf_client.get_historical_data(sym, period_years=2)
                 else:
-                    # Download from day after last recorded date
-                    start = (
-                        pd.Timestamp(last_date) + timedelta(days=1)
-                    ).strftime("%Y-%m-%d")
+                    # Check if there are any business/trading days between last recorded date and today
+                    next_day = pd.Timestamp(last_date) + timedelta(days=1)
+                    pending_trading_days = pd.bdate_range(start=next_day, end=today)
 
-                    if start >= today:
-                        logger.info(f"[Refresh] {sym}: already up-to-date ({last_date}).")
+                    if len(pending_trading_days) == 0:
+                        logger.info(f"[Refresh] {sym}: already up-to-date ({last_date}, no new trading days).")
                         results[sym] = {"status": "up_to_date", "last_date": last_date}
                         continue
 
+                    start = next_day.strftime("%Y-%m-%d")
                     logger.info(f"[Refresh] {sym}: fetching {start} → {today}")
                     df = self.yf_client.get_historical_data(sym, start=start, end=today)
 
