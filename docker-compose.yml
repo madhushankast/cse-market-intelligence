@@ -2,6 +2,28 @@ version: '3.8'
 
 services:
   # ==============================================================================
+  # PostgreSQL 15 Production Database
+  # ==============================================================================
+  db:
+    image: postgres:15-alpine
+    container_name: cse-market-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=cse_user
+      - POSTGRES_PASSWORD=cse_password
+      - POSTGRES_DB=cse_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cse_user -d cse_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ==============================================================================
   # FastAPI Production REST API Server
   # ==============================================================================
   api:
@@ -15,11 +37,15 @@ services:
       - PORT=8000
       - ENV=production
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql+psycopg2://cse_user:cse_password@db:5432/cse_db
     volumes:
       - ./data/processed:/workspace/data/processed
       - ./models:/workspace/models
       - ./reports:/workspace/reports
       - ./configs:/workspace/configs
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -29,30 +55,20 @@ services:
     restart: unless-stopped
 
   # ==============================================================================
-  # Streamlit Interactive Investor Dashboard
+  # React Modern Financial Cockpit (Port 3000)
   # ==============================================================================
-  dashboard:
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
-    container_name: cse-market-dashboard
+      dockerfile: Dockerfile.react
+    container_name: cse-market-terminal
     ports:
-      - "8501:8501"
-    environment:
-      - API_BASE_URL=http://api:8000
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - ./data/processed:/workspace/data/processed
-      - ./models:/workspace/models
-      - ./reports:/workspace/reports
-      - ./configs:/workspace/configs
+      - "3000:80"
     depends_on:
       api:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
-      interval: 20s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
     restart: unless-stopped
+
+volumes:
+  pgdata:
+    driver: local

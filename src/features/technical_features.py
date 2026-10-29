@@ -28,6 +28,16 @@ class TechnicalFeaturePipeline:
       6. Supervised Target: 30-day forward cumulative log return y_t = ln(P_{t+30} / P_t)
     """
 
+    FEATURE_COLUMNS = [
+        "return_1d", "return_5d", "return_10d", "return_20d", "return_30d",
+        "rsi_14", "macd", "macd_signal", "macd_hist",
+        "ema_ratio_12_26", "sma_ratio_20_50",
+        "parkinson_vol", "parkinson_vol_10d", "parkinson_vol_20d", "high_low_spread",
+        "volume_surge_ratio", "log_volume",
+        "aspi_return_5d", "aspi_return_10d", "aspi_return_30d",
+        "relative_strength_30d", "rolling_corr_aspi_30d",
+    ]
+
     def __init__(
         self,
         target_horizon: int = 30,
@@ -37,6 +47,7 @@ class TechnicalFeaturePipeline:
         self.target_horizon = target_horizon
         self.rsi_window = rsi_window
         self.aspi_path = Path(aspi_path)
+        self.feature_columns = self.FEATURE_COLUMNS
 
     @staticmethod
     def compute_rsi(series: pd.Series, period: int = 14) -> pd.Series:

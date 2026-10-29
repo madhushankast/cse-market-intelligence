@@ -147,3 +147,100 @@ def predict_stock_get(
     except Exception as exc:
         logger.error("Prediction error for %s: %s", symbol, exc, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(exc)}")
+
+
+@router.get("/benchmarks", summary="Get Purged Walk-Forward Cross-Validation Benchmarks")
+def get_benchmarks_summary():
+    """
+    Returns empirical cross-validation metrics across all 26 equities comparing
+    Multi-Quantile LightGBM against Naive and Prophet baselines.
+    """
+    report_file = Path("reports/cv_benchmark_summary.csv")
+    if not report_file.exists():
+        raise HTTPException(status_code=404, detail="Benchmark summary report not found.")
+
+    try:
+        df = pd.read_csv(report_file)
+        records = df.to_dict(orient="records")
+        return {
+            "status": "success",
+            "count": len(records),
+            "data": records,
+        }
+    except Exception as exc:
+        logger.error("Error reading benchmark report: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to load benchmark report.")
+
+
+@router.get("/predictions/history/{symbol}", summary="Get Historical Predictions for Symbol")
+def get_prediction_history(symbol: str, limit: int = 30):
+    """
+    Returns historical 30-day ahead forecasts stored in the database for the given equity.
+    """
+    from src.database.session import SessionLocal
+    from src.database.models import ForecastPrediction
+
+    clean_sym = symbol.replace(".", "_")
+    session = SessionLocal()
+    try:
+        rows = (
+            session.query(ForecastPrediction)
+            .filter(ForecastPrediction.symbol == clean_sym)
+            .order_by(ForecastPrediction.as_of_date.desc())
+            .limit(limit)
+            .all()
+        )
+        data = [
+            {
+                "id": r.id,
+                "symbol": r.symbol,
+                "as_of_date": str(r.as_of_date),
+                "current_price": float(r.current_price),
+                "price_p10": float(r.price_p10),
+                "price_p50": float(r.price_p50),
+                "price_p90": float(r.price_p90),
+                "expected_pct_change": float(r.expected_pct_change),
+                "created_at": str(r.created_at) if r.created_at else None,
+            }
+            for r in rows
+        ]
+        return {
+            "status": "success",
+            "symbol": clean_sym,
+            "count": len(data),
+            "data": data,
+        }
+    except Exception as exc:
+        logger.error("Error querying prediction history for %s: %s", symbol, exc)
+        raise HTTPException(status_code=500, detail="Failed to fetch prediction history.")
+    finally:
+        session.close()
+
+
+@router.post("/pipeline/trigger", summary="Trigger Automated Ingestion, Retraining, and Prediction")
+def trigger_daily_pipeline(
+    symbols: Optional[List[str]] = Query(default=None),
+    sync_live: bool = Query(default=True),
+    retrain: bool = Query(default=False),
+):
+    """
+    Manually triggers the daily ingestion, expanding model retraining, and forecast generation job.
+    """
+    from scripts.daily_pipeline_job import run_daily_pipeline
+
+    try:
+        res = run_daily_pipeline(
+            symbols=symbols,
+            sync_live=sync_live,
+            retrain=retrain,
+        )
+        return {
+            "status": "success",
+            "message": "Pipeline execution triggered successfully",
+            "result": res,
+        }
+    except Exception as exc:
+        logger.error("Pipeline trigger error: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Pipeline trigger failed: {str(exc)}")
+
+

@@ -97,6 +97,27 @@ export interface HealthStatus {
   available_models: string[];
 }
 
+export interface BenchmarkRecord {
+  symbol: string;
+  n_folds: number;
+  total_test_samples: number;
+  lgb_dir_acc: number;
+  naive_dir_acc: number;
+  prophet_dir_acc: number;
+  dir_acc_edge_vs_naive: number;
+  lgb_rmse: number;
+  naive_rmse: number;
+  prophet_rmse: number;
+  lgb_mae: number;
+  naive_mae: number;
+  prophet_mae: number;
+  lgb_mean_pinball: number;
+  lgb_pinball_p10: number;
+  lgb_pinball_p50: number;
+  lgb_pinball_p90: number;
+  lgb_coverage_80: number;
+}
+
 export async function checkHealth(): Promise<HealthStatus> {
   const resp = await client.get('/health');
   return resp.data;
@@ -104,6 +125,11 @@ export async function checkHealth(): Promise<HealthStatus> {
 
 export async function fetchAvailableStocks(): Promise<StockQuote[]> {
   const resp = await client.get('/api/v1/stocks');
+  return resp.data.data;
+}
+
+export async function fetchBenchmarks(): Promise<BenchmarkRecord[]> {
+  const resp = await client.get('/api/v1/benchmarks');
   return resp.data.data;
 }
 

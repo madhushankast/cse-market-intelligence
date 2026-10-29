@@ -31,6 +31,11 @@ streamlit>=1.31.0
 plotly>=5.18.0
 matplotlib>=3.7.0
 
+# Database & ORM
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+alembic>=1.13.0
+
 # Testing & Quality
 pytest>=7.4.0
 pytest-cov>=4.1.0

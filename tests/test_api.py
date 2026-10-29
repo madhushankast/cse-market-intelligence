@@ -124,3 +124,19 @@ def test_predict_not_found():
     """Verifies 404 response on unknown symbol."""
     response = client.get("/api/v1/predict/NONEXISTENT_STOCK")
     assert response.status_code == 404
+
+
+def test_benchmarks_endpoint():
+    """Verifies GET /api/v1/benchmarks returns cross-validation benchmark summary."""
+    response = client.get("/api/v1/benchmarks")
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "success"
+    assert res_data["count"] == 26
+    assert len(res_data["data"]) == 26
+    sample = res_data["data"][0]
+    assert "symbol" in sample
+    assert "lgb_dir_acc" in sample
+    assert "naive_dir_acc" in sample
+    assert "lgb_coverage_80" in sample
+
