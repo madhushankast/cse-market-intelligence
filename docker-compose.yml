@@ -1,29 +1,58 @@
 version: '3.8'
 
 services:
-  backend:
+  # ==============================================================================
+  # FastAPI Production REST API Server
+  # ==============================================================================
+  api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: cse-market-api
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
-      - ENV=development
-      - DATABASE_URL=sqlite:///cse.db
+      - ENV=production
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./backend/cse.db:/workspace/cse.db
-      - ./backend/data:/workspace/data
-    restart: always
+      - ./data/processed:/workspace/data/processed
+      - ./models:/workspace/models
+      - ./reports:/workspace/reports
+      - ./configs:/workspace/configs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
-  frontend:
+  # ==============================================================================
+  # Streamlit Interactive Investor Dashboard
+  # ==============================================================================
+  dashboard:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: cse-market-dashboard
     ports:
-      - "3000:80"
+      - "8501:8501"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - API_BASE_URL=http://api:8000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data/processed:/workspace/data/processed
+      - ./models:/workspace/models
+      - ./reports:/workspace/reports
+      - ./configs:/workspace/configs
     depends_on:
-      - backend
-    restart: always
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

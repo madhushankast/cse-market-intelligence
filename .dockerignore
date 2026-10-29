@@ -1,0 +1,37 @@
+# Git & IDE metadata
+.git
+.github
+.gitignore
+.agents
+.idea
+.vscode
+
+# Python Virtual Environments & Caches
+.venv
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# MLflow & Experiment Tracking Artifacts
+mlruns/
+mlartifacts/
+.mlflow/
+
+# Frontend Node/Build Artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Temporary, Scratch & Log Files
+*.tmp
+*.log
+*.parquet.tmp
+scratch/
+.DS_Store
+Thumbs.db

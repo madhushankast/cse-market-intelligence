@@ -1,118 +1,82 @@
-# System Architecture
+# CSE Market Intelligence Platform: Production MLOps Architecture (OHLCV Only)
 
-The **CSE Market Intelligence Platform** follows a decoupled, modular architecture designed for high scalability, cloud compatibility, and clear separation of concerns.
+The **Colombo Stock Exchange (CSE) Market Intelligence Platform** follows a decoupled, production-grade MLOps architecture designed for high scalability, leak-free time-series processing, and institutional-grade explainability strictly modeled on historical equities price and volume (OHLCV) dynamics.
 
-```text
-┌────────────────────────────────────────────────────────┐
-│                     DATA SOURCES                       │
-│  ┌─────────────────┐ ┌───────────────┐ ┌────────────┐  │
-│  │   Yahoo Finance │ │   CBSL CSV    │ │Google Trends│ │
-│  │ (YFinance Client)│ │   (Fallback)  │ │ (Fallback) │  │
-│  └────────┬────────┘ └───────┬───────┘ └──────┬──────┘  │
-└───────────┼──────────────────┼────────────────┼────────┘
-            │                  │                │
-            ▼                  │                │
-┌────────────────────────┐     │                │
-│   Ingestion Service    │     │                │
-│ (CSE Client & Parser)  │     │                │
-└───────────┬────────────┘     │                │
-            │                  │                │
-            ▼                  ▼                ▼
-┌────────────────────────────────────────────────────────┐
-│                     STORAGE LAYER                      │
-│        ┌─────────────────────────┐                     │
-│        │   SQLite (cse.db)       │                     │
-│        │   - stock_prices        │                     │
-│        │   - alternative_data    │                     │
-│        │   - forecast_results    │                     │
-│        │   - job_logs            │                     │
-│        │   - explanations        │                     │
-│        └───────────┬─────────────┘                     │
-│                    │                                   │
-│                    ▼                                   │
-│        ┌─────────────────────────┐                     │
-│        │   Raw CSV Data Archives │                     │
-│        │   - data/raw/cse/*.csv  │                     │
-│        └───────────┬─────────────┘                     │
-└────────────────────┼───────────────────────────────────┘
-                     │
-                     ▼
-┌────────────────────────────────────────────────────────┐
-│               DATA ENGINEERING & PIPELINE              │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Preprocessing Pipeline                           │  │
-│  │  - Cleaner (Deduplication, sorting, .ffill())     │  │
-│  │  - Indicator Builder (Returns, SMAs, RSI, MACD)  │  │
-│  └───────────────────────┬──────────────────────────┘  │
-│                          │                             │
-│                          ▼                             │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Data Merger Service                              │  │
-│  │  - pd.merge_asof() alignment (Daily+Weekly+Month)│  │
-│  └───────────────────────┬──────────────────────────┘  │
-└──────────────────────────┼─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                    ANALYTICS & ML                      │
-│  ┌────────────────────────┐  ┌──────────────────────┐  │
-│  │ Statistical Correlation│  │ Forecasting Models   │  │
-│  │ (Granger, Lag, Correlation)  │  │ (Baseline, SARIMAX,  │  │
-│  │                        │  │  XGBoost)            │  │
-│  └───────────┬────────────┘  └──────────┬───────────┘  │
-│              │                          │              │
-│              ▼                          ▼              │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Explainability Engine (SHAP Attributions)         │  │
-│  └───────────────────────┬──────────────────────────┘  │
-└──────────────────────────┼─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                       API LAYER                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ FastAPI REST Router (/api/v1/)                   │  │
-│  └───────────────────────┬──────────────────────────┘  │
-└──────────────────────────┼─────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│                     FRONTEND UI                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ React + Vite Client Dashboard                    │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
+---
+
+## 1. High-Level Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph DataSources["Data Ingestion Layer (OHLCV Only)"]
+        A1["CSE REST API\n(cse.lk/api)"] -->|Daily OHLCV Polling| B1["CSEScraper\n(Session Adapter & Retry)"]
+        A2["Historical Stock Archives\n(data/raw/cse/*.csv)"] -->|Local File Ingestion| B2["CSEDataLoader\n(Schema Standardization)"]
+    end
+
+    subgraph FeatureEngineering["Technical Feature Store & Cache"]
+        B1 & B2 --> C1["TechnicalFeatureEngine\n(RSI, MACD, EMAs, Parkinson Volatility, Lags)"]
+        C1 -->|Pure Price & Volume Signals| D1[("Partitioned Parquet /\nDuckDB Feature Store")]
+    end
+
+    subgraph ModelingValidation["MLOps Training & Purged Validation"]
+        D1 --> E1["PurgedWalkForwardCV\n(30-Day Forward Embargo Buffer)"]
+        E1 --> F1["MultiQuantileLGBMTrainer\n(P10, P50, P90 Pinball Loss)"]
+        E1 --> F2["Baselines\n(Prophet & Martingale Drift)"]
+        F1 --> G1["MLflow Tracking Server\n(Metrics, Coverage, Model Artifacts)"]
+    end
+
+    subgraph Explainability["Dual-Layer Explainability Engine"]
+        F1 --> H1["TreeSHAP Service\n(Exact Shapley Feature Attributions)"]
+        D1 --> H2["Heuristics Engine\n(Supporting vs Rejecting Signals)"]
+    end
+
+    subgraph Serving["Application & Presentation Layer"]
+        F1 & H1 & H2 --> I1["FastAPI Backend\n(POST /predict, GET /explain)"]
+        I1 --> J1["Streamlit Dashboard\n(Interactive Plotly Cones)"]
+    end
 ```
 
 ---
 
-## Component Overview
+## 2. Core Architectural Pillars
 
-1. **Ingestion Layer ([`backend/app/data_sources/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/data_sources/))**:
-   - Decoupled interface wrappers for downloading stock indices and asset prices.
-   - Core client: `YFinanceCSEClient` ([yfinance_client.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/data_sources/cse/yfinance_client.py)) which handles API scraping from Yahoo Finance with fallback handling to local raw stock CSV records.
-   - Extensible structures for Google Trends search values and Central Bank of Sri Lanka (CBSL) macroeconomic indicators.
+### Pillar 1: Pure Historical Equities Ingestion
+- **Direct CSE Portal Client (`src/ingestion/cse_scraper.py`)**: Queries `https://www.cse.lk/api/companyInfoSummery` to resolve security symbol IDs and fetches daily candlestick bars from `/companyChartDataByStock` with automatic connection pooling and exponential backoff retry.
+- **Storage Abstraction & Standardization (`src/ingestion/data_loader.py`)**: Loads multi-year stock archives (`data/raw/yearly/`) and individual equity CSVs (`data/raw/cse/`), standardizes them to `['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']`, and caches processed matrices into high-performance Parquet format (`data/processed/`).
 
-2. **Storage Layer ([`backend/app/database/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/))**:
-   - Schema declarations managed via SQLAlchemy ORM mapping SQLite structures for rapid querying.
-   - Tables include: `stock_prices`, `alternative_data` (macro trends), `forecast_results`, `job_logs`, and `prediction_explanations`.
+### Pillar 2: Technical Feature Engineering (Strictly OHLCV)
+All predictive signals are strictly computed from historical equities dynamics, avoiding unreliable external data:
+1. **Autoregressive Returns**: 1-day logarithmic returns, high-low percentage range, and intraday displacement.
+2. **Trend & Moving Averages**: Exponential Moving Averages (10, 20, 50, 200) and normalized price distances ($\text{dist\_ema}$).
+3. **Momentum Oscillators**: Wilder's RSI (14) and MACD (12, 26, 9) with momentum histogram.
+4. **Volatility Estimators**: Annualized Parkinson High-Low volatility ($N=20$) and Bollinger Bands (%B and Band Width).
+5. **Autoregressive Lags**: Multi-step return lags ($t-1, t-2, t-3, t-5, t-10$).
 
-3. **Processing Layer ([`backend/app/preprocessing/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/preprocessing/))**:
-   - Data cleaning: Deduplication, temporal sorting, and forward/backward filling handling.
-   - Indicator construction: Building technical variables (SMAs, EMAs, RSI, MACD, Bollinger Bands, volatility, Average True Range).
-   - Alignment: Merging datasets across diverse granularities (Daily, Weekly, Monthly) via robust pandas `merge_asof` operations.
+### Pillar 3: Purged & Embargoed Walk-Forward Cross-Validation
+Because multi-step returns ($y_t = \ln(P_{t+30}/P_t)$) create overlapping dependency windows, standard $K$-Fold cross-validation leaks future information into earlier folds.
+- **Purging**: Training points within 30 trading days prior to the evaluation window are strictly removed.
+- **Embargoing**: An explicit 30-trading-day buffer separates training and test splits to neutralize serial autocorrelation spillover.
 
-4. **Analytics Layer ([`backend/app/analytics/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/analytics/))**:
-   - Performs rule-based scoring (converting indicators into beginner-friendly market tendency signals).
-   - Computes statistical correlation, Granger causality p-values, and Lead-Lag cross-correlations.
-   - Features a rule-based backtesting engine to simulate trading strategies against historical prices.
+### Pillar 4: Multi-Quantile Uncertainty Estimation
+Emerging market equities exhibit non-Gaussian returns with fat tails. Rather than predicting an overconfident single number, the platform trains three distinct LightGBM regressors minimizing the **Pinball Loss**:
+$$\mathcal{L}_\alpha(y, \hat{y}) = \max(\alpha(y - \hat{y}), (\alpha - 1)(y - \hat{y}))$$
+for quantiles $\alpha \in \{0.10, 0.50, 0.90\}$, constructing an 80% confidence forecast cone $[P_{10}, P_{90}]$ around the median path $P_{50}$.
 
-5. **Machine Learning & Explainability ([`backend/app/forecasting/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/forecasting/) & [`backend/app/explainability/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/explainability/))**:
-   - Trains forecasting algorithms (Baseline, SARIMAX, and XGBoost) utilizing exogenous macroeconomic and technical indicators.
-   - Explains XGBoost outputs using SHAP (SHapley Additive exPlanations) values to isolate feature impact.
+### Pillar 5: Dual-Layer Explainability (XAI)
+1. **Mathematical Attribution (TreeSHAP)**:
+   Exact Shapley values decomposing marginal price and volume indicator impacts in return space.
+2. **Retail Investor Technical Badges**:
+   Rule engine translating technical indicators (RSI overbought/oversold, 20-day SMA trend, MACD momentum, Bollinger Band touch, and Parkinson volatility) into color-coded **"Supporting"** vs. **"Rejecting"** badges.
 
-6. **API Layer ([`backend/app/api/v1/`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/))**:
-   - Web router endpoints using FastAPI. Serves structured JSON data models supporting routing, data caching, background pipeline scheduler tasks, and validation.
+---
 
-7. **Frontend Dashboard ([`frontend/src/`](file:///c:/Ongoing%20Projects/New%20folder/frontend/src/))**:
-   - React application initialized using Vite. Displays interactive Recharts plotting layouts, model evaluation comparisons, historical pricing overlays, and system execution logs.
+## 3. Serving & Containerization
+
+- **FastAPI Backend (`api/main.py`)**:
+  - `POST /api/v1/predict/{symbol}`: Returns 30-day forecast cone ($P_{10}, P_{50}, P_{90}$) and daily trajectory points.
+  - `GET /api/v1/explain/{symbol}`: Returns TreeSHAP feature drivers and rule-based heuristic badges.
+  - `GET /health`: Liveness and readiness health probe.
+- **Interactive Dashboard (`frontend/app.py`)**:
+  - Streamlit dashboard with interactive Plotly forecast cones, TreeSHAP impact bars, and heuristic badge cards.
+- **Docker Compose (`docker-compose.yml`)**:
+  - Unified orchestration launching the FastAPI engine on port `8000` and the Streamlit dashboard on port `8501`.

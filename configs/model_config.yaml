@@ -1,0 +1,65 @@
+# CSE Market Intelligence Platform - Model & Pipeline Configuration
+# Multi-Quantile LightGBM 30-Day Cumulative Log Return Forecasting
+
+experiment:
+  name: "cse_30d_quantile_lgbm"
+  tracking_uri: "mlruns"
+  artifact_location: "mlartifacts"
+  random_seed: 42
+
+target:
+  name: "log_return_30d"
+  horizon_days: 30
+  description: "Cumulative 30-trading-day ahead log return: ln(P_{t+30} / P_t)"
+  quantiles: [0.1, 0.5, 0.9]
+
+cross_validation:
+  strategy: "purged_walk_forward"
+  n_splits: 5
+  initial_train_window_days: 504       # ~2 trading years initial history
+  test_window_days: 30                 # 30-day forecast validation horizon
+  embargo_window_days: 30              # 30-day gap to prevent overlapping multi-day target leakage
+  min_train_size: 250
+
+features:
+  price_columns: ["open", "high", "low", "close", "volume"]
+  lag_windows: [1, 2, 3, 5, 10, 20, 30]
+  rolling_windows: [7, 14, 30, 60]
+  momentum_rsi_window: 14
+  macd:
+    fast_period: 12
+    slow_period: 26
+    signal_period: 9
+  ema_spans: [10, 20, 50, 200]
+  parkinson_volatility_window: 20
+  bollinger_window: 20
+  bollinger_std: 2.0
+  atr_window: 14
+
+lightgbm_params:
+  n_estimators: 300
+  learning_rate: 0.03
+  num_leaves: 31
+  max_depth: 6
+  min_child_samples: 20
+  subsample: 0.85
+  colsample_bytree: 0.85
+  reg_alpha: 0.1
+  reg_lambda: 1.0
+  verbose: -1
+
+baselines:
+  prophet:
+    growth: "linear"
+    yearly_seasonality: true
+    weekly_seasonality: true
+    daily_seasonality: false
+    seasonality_mode: "additive"
+  naive:
+    method: "last_observed_drift"
+
+serving:
+  host: "0.0.0.0"
+  port: 8000
+  cache_ttl_seconds: 3600
+  model_dir: "models/saved"

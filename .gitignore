@@ -1,32 +1,89 @@
-# Python & Virtual Environments
+# Python Environments & Bytecode
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-venv/
+*.so
+.Python
 env/
+venv/
+.venv/
 ENV/
-.pytest_cache/
-coverage/
-
-# Database & Storage
-*.sqlite
-*.db
-
-# Frontend Node Modules & Builds
-node_modules/
-dist/
 build/
-.eslintcache
-*.local
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Environment & Config
-.env
+# Testing & Type Checking
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
 
-# IDEs & System
+# Data & Datasets
+# Preserve raw directory structure but exclude heavy generated / processed files
+data/processed/*
+!data/processed/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/cse/
+!data/raw/cse/*.csv
+!data/raw/trends/
+!data/raw/trends/*.csv
+!data/raw/yearly/
+!data/raw/yearly/*.csv
+!data/raw/*.csv
+
+# Databases & Cache
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
+*.parquet.tmp
+
+# Trained Models & Serialized Weights
+*.pkl
+*.pickle
+*.joblib
+*.bin
+*.model
+models/saved/
+
+# MLflow Tracking & Artifacts
+mlruns/
+mlartifacts/
+.mlflow/
+
+# IDE & Operating System Metadata
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 .DS_Store
-logs/
+Thumbs.db
+desktop.ini
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Node / Vite Frontend Artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.eslintcache
+frontend/*.local
