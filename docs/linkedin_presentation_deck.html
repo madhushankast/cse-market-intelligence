@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1080, initial-scale=1.0">
-  <title>CSE Market Intelligence Platform - Executive Deck</title>
+  <title>CSE Market Intelligence - LinkedIn Minimal Carousel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <style>
     @page {
       size: 1080px 1350px;
@@ -40,528 +40,320 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 72px 80px;
+      padding: 96px 88px;
       position: relative;
       background: #090d16;
       border-bottom: 2px solid #161b22;
     }
-    /* Subtle decorative background gradients */
-    .slide::before {
-      content: "";
-      position: absolute;
-      top: -120px;
-      right: -120px;
-      width: 480px;
-      height: 480px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(9, 13, 22, 0) 70%);
-      pointer-events: none;
-    }
-    /* Typography Styles */
+    /* Typography */
     .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
     .font-display {
       font-family: 'Space Grotesk', sans-serif;
     }
-    .badge-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: rgba(56, 189, 248, 0.08);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 9999px;
+    .tag {
+      display: inline-block;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 700;
       color: #38bdf8;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
-    .badge-indicator {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #38bdf8;
-    }
-    .slide-title {
+    .hero-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 46px;
+      font-size: 58px;
       font-weight: 700;
       line-height: 1.15;
+      letter-spacing: -0.03em;
       color: #f8fafc;
-      letter-spacing: -0.02em;
-      margin-bottom: 12px;
+      margin-bottom: 24px;
     }
-    .slide-subtitle {
-      font-size: 18px;
+    .hero-desc {
+      font-size: 24px;
       line-height: 1.5;
       color: #94a3b8;
-      max-width: 860px;
-      margin-bottom: 32px;
+      max-width: 880px;
     }
-    /* Card Styles */
+    /* Minimal Card Containers */
     .card {
-      background: #121824;
-      border: 1px solid #222d3d;
-      border-radius: 16px;
-      padding: 28px 32px;
-      position: relative;
+      background: #111722;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      padding: 36px 40px;
     }
-    .card-accent {
-      border-left: 4px solid #38bdf8;
+    .stat-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
     }
-    .card-emerald {
-      border-left: 4px solid #34d399;
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: #cbd5e1;
+      letter-spacing: 0.05em;
     }
-    .card-rose {
-      border-left: 4px solid #f87171;
+    .stat-sub {
+      font-size: 16px;
+      color: #64748b;
+      margin-top: 6px;
     }
-    /* Footer */
+    /* Slide Footer */
     .slide-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-top: 24px;
+      padding-top: 28px;
       border-top: 1px solid #1e293b;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 14px;
       color: #64748b;
     }
     .footer-highlight {
       color: #38bdf8;
-    }
-    /* Helpers */
-    .pill {
-      display: inline-block;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 6px;
-      letter-spacing: 0.04em;
-    }
-    .pill-cyan {
-      background: rgba(56, 189, 248, 0.12);
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.3);
-    }
-    .pill-rose {
-      background: rgba(248, 113, 113, 0.12);
-      color: #f87171;
-      border: 1px solid rgba(248, 113, 113, 0.3);
-    }
-    .pill-emerald {
-      background: rgba(52, 211, 153, 0.12);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-    .pill-slate {
-      background: rgba(148, 163, 184, 0.12);
-      color: #94a3b8;
-      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
 
   <!-- ========================================================================= -->
-  <!-- SLIDE 1: COVER & THE ANTI-PATTERN HOOK                                    -->
+  <!-- SLIDE 1: HOOK & THE PROBLEM                                               -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <div class="badge-chip">
-        <span class="badge-indicator"></span>
-        [MLOPS & QUANTITATIVE FINANCE CASE STUDY]
-      </div>
-      <h1 class="slide-title">Why 90% of Stock Price Predictors Fail in Production</h1>
-      <p class="slide-subtitle">
-        The fundamental fallacy of nominal point estimation versus engineering calibrated multi-quantile uncertainty boundaries.
+      <span class="tag">[ 01 / PROBLEM &amp; PIVOT ]</span>
+      <h1 class="hero-title">Why Predicting Stock Prices is an Anti-Pattern</h1>
+      <p class="hero-desc">
+        Predicting raw price points (P_t+30) creates a delayed echo of yesterday. Real financial ML forecasts stationary forward returns.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 10px;">
-        <!-- Card 1: The Trap -->
-        <div class="card card-rose" style="background: rgba(248, 113, 113, 0.03);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="pill pill-rose">[THE ANTI-PATTERN: NOMINAL PRICE REGRESSION]</span>
-            <span class="font-mono" style="font-size: 13px; color: #f87171;">Synthetic Accuracy Illusion</span>
+      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 56px;">
+        <div class="card" style="border-left: 6px solid #f87171;">
+          <div class="font-mono" style="font-size: 14px; color: #f87171; font-weight: 700; margin-bottom: 8px;">
+            [ THE MISTAKE: RAW NOMINAL PRICE ]
           </div>
-          <div class="font-mono" style="font-size: 15px; color: #e2e8f0; margin-bottom: 12px; background: #0b111c; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b;">
-            P_hat(t+30) = f(P_t, P_{t-1}, ...)  --&gt;  Learns Identity: P_hat(t+30) ~= P_t
+          <div style="font-size: 22px; font-weight: 600; color: #f8fafc; margin-bottom: 8px;">
+            P_hat(t+30) ~= P_t
           </div>
-          <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1;">
-            Asset prices are non-stationary I(1) unit-root series. Unconstrained MSE minimization heavily penalizes small price shifts, forcing gradient boosters to output a 30-day delayed lag. While achieving deceptive R^2 &gt; 0.98, the model generates zero economic alpha and misses every turning point.
+          <p style="font-size: 17px; color: #94a3b8; line-height: 1.5;">
+            Non-stationary prices trick models into outputting today's price as tomorrow's forecast with synthetic 98% R^2 and zero actual alpha.
           </p>
         </div>
 
-        <!-- Card 2: The Mathematical Pivot -->
-        <div class="card card-emerald" style="background: rgba(52, 211, 153, 0.03);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="pill pill-emerald">[THE MATHEMATICAL PIVOT: FORWARD LOG RETURN]</span>
-            <span class="font-mono" style="font-size: 13px; color: #34d399;">Stationary Formulation</span>
+        <div class="card" style="border-left: 6px solid #34d399;">
+          <div class="font-mono" style="font-size: 14px; color: #34d399; font-weight: 700; margin-bottom: 8px;">
+            [ THE FIX: 30-DAY FORWARD LOG RETURN ]
           </div>
-          <div class="font-mono" style="font-size: 15px; color: #e2e8f0; margin-bottom: 12px; background: #0b111c; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b;">
-            y_t = ln( P_{t+30} / P_t )  [30-Trading-Day Cumulative Log Return]
+          <div style="font-size: 22px; font-weight: 600; color: #f8fafc; margin-bottom: 8px;">
+            y_t = ln( P_{t+30} / P_t )
           </div>
-          <p style="font-size: 15px; line-height: 1.6; color: #cbd5e1;">
-            Formulating targets as cumulative log returns over a fixed 30-day horizon induces covariance stationarity and scale invariance. Modeled across 26 Colombo Stock Exchange (CSE) liquid equities and the All Share Price Index (ASPI), models learn real mean-reversion, volatility shifts, and momentum.
+          <p style="font-size: 17px; color: #94a3b8; line-height: 1.5;">
+            Enforces stationarity across all 26 Colombo Stock Exchange equities, forcing models to learn genuine momentum and cyclical turning points.
           </p>
-        </div>
-
-        <!-- Core Architectural Summary Banner -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 6px;">
-          <div style="background: #111722; padding: 16px; border-radius: 10px; border: 1px solid #1e293b;">
-            <div class="font-mono" style="font-size: 11px; color: #64748b; text-transform: uppercase;">Universe Scope</div>
-            <div class="font-mono" style="font-size: 16px; font-weight: 700; color: #f8fafc; margin-top: 4px;">26 Equities + ASPI</div>
-          </div>
-          <div style="background: #111722; padding: 16px; border-radius: 10px; border: 1px solid #1e293b;">
-            <div class="font-mono" style="font-size: 11px; color: #64748b; text-transform: uppercase;">Horizon</div>
-            <div class="font-mono" style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 4px;">30 Trading Days</div>
-          </div>
-          <div style="background: #111722; padding: 16px; border-radius: 10px; border: 1px solid #1e293b;">
-            <div class="font-mono" style="font-size: 11px; color: #64748b; text-transform: uppercase;">Optimization</div>
-            <div class="font-mono" style="font-size: 16px; font-weight: 700; color: #34d399; margin-top: 4px;">Pinball Quantiles</div>
-          </div>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>COLOMBO STOCK EXCHANGE QUANTITATIVE INTELLIGENCE</span>
-      <span class="footer-highlight">Next: System Architecture [01 / 05]</span>
+      <span>COLOMBO STOCK EXCHANGE (CSE) MLOPS</span>
+      <span class="footer-highlight">Swipe &gt;</span>
     </div>
   </section>
 
-
   <!-- ========================================================================= -->
-  <!-- SLIDE 2: THE 4-STAGE MLOPS LAKEHOUSE ARCHITECTURE                          -->
+  <!-- SLIDE 2: UNCERTAINTY CONES                                                -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <div class="badge-chip">
-        <span class="badge-indicator"></span>
-        [SYSTEM ARCHITECTURE]
-      </div>
-      <h1 class="slide-title">End-to-End MLOps Pipeline</h1>
-      <p class="slide-subtitle">
-        A decoupled, zero-leakage workflow from raw exchange endpoints to an institutional financial terminal.
+      <span class="tag">[ 02 / UNCERTAINTY CONES ]</span>
+      <h1 class="hero-title">Replacing Point Estimates with Risk Envelopes</h1>
+      <p class="hero-desc">
+        Markets are probabilistic. We train three Multi-Quantile LightGBM models minimizing Pinball Loss.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Stage 1 -->
-        <div class="card card-accent" style="padding: 20px 28px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="font-mono" style="font-size: 13px; font-weight: 700; color: #38bdf8;">[STAGE 01]</span>
-              <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">CSE API Ingestion &amp; Lakehouse</span>
-            </div>
-            <span class="pill pill-cyan">data/processed/*.parquet</span>
+      <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 56px;">
+        <div class="card" style="border-left: 6px solid #f87171;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span class="font-mono" style="font-size: 20px; font-weight: 700; color: #f87171;">P10 Floor</span>
+            <span class="font-mono" style="font-size: 13px; color: #64748b;">Quantile 0.10</span>
           </div>
-          <p style="font-size: 14px; line-height: 1.5; color: #94a3b8;">
-            Direct JSON ingestion from official CSE endpoints (daily bars + ASPI series). Partitioned zero-copy Parquet lakehouse architecture with sub-millisecond columnar read performance.
+          <p style="font-size: 17px; color: #cbd5e1; margin-top: 8px;">
+            Downside Value-at-Risk support boundary. Penalizes extreme drawdowns 9x more than upside misses.
           </p>
         </div>
 
-        <!-- Stage 2 -->
-        <div class="card card-accent" style="padding: 20px 28px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="font-mono" style="font-size: 13px; font-weight: 700; color: #38bdf8;">[STAGE 02]</span>
-              <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">Vectorized Technical Feature Store</span>
-            </div>
-            <span class="pill pill-cyan">22 Microstructure Indicators</span>
+        <div class="card" style="border-left: 6px solid #38bdf8;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span class="font-mono" style="font-size: 20px; font-weight: 700; color: #38bdf8;">P50 Median</span>
+            <span class="font-mono" style="font-size: 13px; color: #64748b;">Quantile 0.50</span>
           </div>
-          <p style="font-size: 14px; line-height: 1.5; color: #94a3b8;">
-            Zero-leakage backward rolling feature engineering: 5x more efficient Parkinson high-low volatility, Wilder RSI(14), MACD histogram, volume expansion ratios, and ASPI market-relative return spreads.
+          <p style="font-size: 17px; color: #cbd5e1; margin-top: 8px;">
+            Expected median return trajectory. Minimizes MAE, robust against illiquid price spikes.
           </p>
         </div>
 
-        <!-- Stage 3 -->
-        <div class="card card-accent" style="padding: 20px 28px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="font-mono" style="font-size: 13px; font-weight: 700; color: #38bdf8;">[STAGE 03]</span>
-              <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">Purged CV &amp; Quantile Training</span>
-            </div>
-            <span class="pill pill-cyan">Pinball Loss [P10, P50, P90]</span>
+        <div class="card" style="border-left: 6px solid #34d399;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span class="font-mono" style="font-size: 20px; font-weight: 700; color: #34d399;">P90 Ceiling</span>
+            <span class="font-mono" style="font-size: 13px; color: #64748b;">Quantile 0.90</span>
           </div>
-          <p style="font-size: 14px; line-height: 1.5; color: #94a3b8;">
-            5-fold expanding walk-forward validation with a strict 30-day embargo gap. Tri-quantile LightGBM models serialized to disk (&lt;200 KB per model) with benchmark metrics evaluated against Prophet and Random Walk.
-          </p>
-        </div>
-
-        <!-- Stage 4 -->
-        <div class="card card-accent" style="padding: 20px 28px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="font-mono" style="font-size: 13px; font-weight: 700; color: #38bdf8;">[STAGE 04]</span>
-              <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">Serving REST API &amp; React Cockpit</span>
-            </div>
-            <span class="pill pill-cyan">FastAPI + React 19 + TradingView</span>
-          </div>
-          <p style="font-size: 14px; line-height: 1.5; color: #94a3b8;">
-            Production FastAPI microservice delivering dynamic 30-day quantile trajectories, exact TreeSHAP attributions, and institutional heuristic validation cards rendered via TradingView Lightweight Charts.
+          <p style="font-size: 17px; color: #cbd5e1; margin-top: 8px;">
+            Bullish expansion envelope indicating upper momentum resistance levels.
           </p>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>DECOUPLED LAKEHOUSE ARCHITECTURE</span>
-      <span class="footer-highlight">[02 / 05]</span>
+      <span>MULTI-QUANTILE LIGHTGBM</span>
+      <span class="footer-highlight">Swipe &gt;</span>
     </div>
   </section>
 
-
   <!-- ========================================================================= -->
-  <!-- SLIDE 3: TIME-SERIES RIGOR & UNCERTAINTY CONES                             -->
+  <!-- SLIDE 3: LEAKAGE-FREE VALIDATION                                          -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <div class="badge-chip">
-        <span class="badge-indicator"></span>
-        [VALIDATION &amp; RISK ENGINE]
-      </div>
-      <h1 class="slide-title">Purged Cross-Validation &amp; Pinball Cones</h1>
-      <p class="slide-subtitle">
-        Eliminating overlapping label contamination and replacing fragile single-point estimates with asymmetric risk envelopes.
+      <span class="tag">[ 03 / VALIDATION RIGOR ]</span>
+      <h1 class="hero-title">Zero Lookahead Leakage: Purged &amp; Embargoed CV</h1>
+      <p class="hero-desc">
+        A 30-day forward return target leaks data if standard K-Fold CV is used. We enforce a 30-day purge buffer.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <!-- Card 1: Purged Walk-Forward CV -->
-        <div class="card" style="border-left: 4px solid #38bdf8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">Leakage-Free Purged &amp; Embargoed Walk-Forward CV</span>
-            <span class="pill pill-cyan">5 Expanding Folds</span>
+      <div style="display: flex; flex-direction: column; gap: 28px; margin-top: 56px;">
+        <div class="card">
+          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 12px;">
+            [ 5-FOLD EXPANDING TIMELINE WITH EMBARGO ]
           </div>
-          <p style="font-size: 14px; line-height: 1.5; color: #94a3b8; margin-bottom: 16px;">
-            Standard random K-Fold CV destroys temporal chronology and leaks future return signals. In forward return prediction, training samples within 30 days of the test set share overlapping target returns.
-          </p>
-
-          <!-- ASCII Timeline Diagram in Monospace -->
-          <div class="font-mono" style="font-size: 12px; background: #0b111c; padding: 16px; border-radius: 8px; border: 1px solid #1e293b; color: #cbd5e1; line-height: 1.8;">
-            Time ────────────────────────────────────────────────────────►<br>
-            Fold 1: [=== Train (250d) ===] [Purge: 30d] [Test: 60d] [Embargo: 30d]<br>
-            Fold 2: [====== Train (310d) ======] [Purge: 30d] [Test: 60d] [Embargo: 30d]<br>
-            Fold 3: [========= Train (370d) =========] [Purge: 30d] [Test: 60d] ...
+          <div class="font-mono" style="font-size: 14px; background: #080c14; padding: 24px; border-radius: 12px; border: 1px solid #1e293b; color: #cbd5e1; line-height: 2;">
+            Fold 1: [== Train ==] [Purge: 30d] [Test: 60d] [Embargo: 30d]<br>
+            Fold 2: [==== Train ====] [Purge: 30d] [Test: 60d] [Embargo: 30d]<br>
+            Fold 3: [====== Train ======] [Purge: 30d] [Test: 60d] ...
           </div>
         </div>
 
-        <!-- Card 2: Multi-Quantile Pinball Bounds -->
-        <div class="card" style="border-left: 4px solid #34d399;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-            <span class="font-display" style="font-size: 18px; font-weight: 700; color: #f8fafc;">Asymmetric Pinball Quantile Distribution</span>
-            <span class="pill pill-emerald">Loss: max(q*e, (1-q)*e)</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="card" style="border-top: 4px solid #38bdf8;">
+            <div class="font-mono" style="font-size: 14px; color: #38bdf8; font-weight: 700;">30-DAY PURGE</div>
+            <p style="font-size: 16px; color: #94a3b8; margin-top: 8px;">
+              Drops training samples whose 30-day horizon overlaps with test dates.
+            </p>
           </div>
-
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #0c121d; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b;">
-              <div>
-                <span class="font-mono" style="color: #f87171; font-weight: 700; font-size: 14px;">[P10] Downside Value-at-Risk Floor</span>
-                <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;">Penalizes underpredicting extreme drawdowns 9x more than upside misses.</p>
-              </div>
-              <span class="pill pill-rose">q = 0.10</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #0c121d; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b;">
-              <div>
-                <span class="font-mono" style="color: #38bdf8; font-weight: 700; font-size: 14px;">[P50] Median Expected Trajectory</span>
-                <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;">Minimizes MAE; robust against market manipulation spikes and illiquid ticks.</p>
-              </div>
-              <span class="pill pill-cyan">q = 0.50</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #0c121d; padding: 12px 16px; border-radius: 8px; border: 1px solid #1e293b;">
-              <div>
-                <span class="font-mono" style="color: #34d399; font-weight: 700; font-size: 14px;">[P90] Bullish Expansion Envelope</span>
-                <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;">90th percentile upper boundary indicating sustained momentum resistance.</p>
-              </div>
-              <span class="pill pill-emerald">q = 0.90</span>
-            </div>
+          <div class="card" style="border-top: 4px solid #34d399;">
+            <div class="font-mono" style="font-size: 14px; color: #34d399; font-weight: 700;">30-DAY EMBARGO</div>
+            <p style="font-size: 16px; color: #94a3b8; margin-top: 8px;">
+              Blocks post-test auto-correlation spillover into future folds.
+            </p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>RIGOROUS TIME-SERIES GOVERNANCE</span>
-      <span class="footer-highlight">[03 / 05]</span>
+      <span>PURGED WALK-FORWARD ENGINE</span>
+      <span class="footer-highlight">Swipe &gt;</span>
     </div>
   </section>
 
-
   <!-- ========================================================================= -->
-  <!-- SLIDE 4: DUAL-LAYER EXPLAINABILITY (XAI)                                  -->
+  <!-- SLIDE 4: DUAL-LAYER EXPLAINABILITY                                        -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <div class="badge-chip">
-        <span class="badge-indicator"></span>
-        [MODEL INTERPRETABILITY]
-      </div>
-      <h1 class="slide-title">Solving the Black-Box Dilemma</h1>
-      <p class="slide-subtitle">
-        Bridging mathematical Shapley attribution and trader heuristic intuition into a transparent decision engine.
+      <span class="tag">[ 04 / EXPLAINABLE AI ]</span>
+      <h1 class="hero-title">Solving the Black-Box Dilemma</h1>
+      <p class="hero-desc">
+        Bridging mathematical Shapley attributions with institutional trader heuristic cards.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- Layer 1: TreeSHAP Attribution -->
-        <div class="card" style="border-left: 4px solid #8b5cf6;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="font-display" style="font-size: 17px; font-weight: 700; color: #f8fafc;">Layer 1: Exact TreeSHAP Mathematical Attribution</span>
-            <span class="pill" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3);">y_hat = phi_0 + sum(phi_i)</span>
+      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 56px;">
+        <div class="card" style="border-left: 6px solid #c084fc;">
+          <div class="font-mono" style="font-size: 13px; color: #c084fc; font-weight: 700;">
+            [ LAYER 1: MATHEMATICAL TREESHAP ]
           </div>
-          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">
-            Decomposes predicted 30-day return into exact basis-point feature contributions:
+          <div style="font-size: 20px; font-weight: 600; color: #f8fafc; margin: 8px 0;">
+            Exact Additive Shapley Values
+          </div>
+          <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
+            Decomposes predicted return into exact basis-point contributions: Parkinson Volatility, RSI momentum, and ASPI relative alpha.
           </p>
-
-          <!-- Mock Visual SHAP Driver Bars -->
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: 'JetBrains Mono', monospace;">
-              <span style="color: #cbd5e1; width: 220px;">parkinson_vol_20d</span>
-              <div style="flex: 1; height: 8px; background: #1e293b; border-radius: 4px; margin: 0 16px; position: relative;">
-                <div style="position: absolute; left: 50%; width: 38%; height: 100%; background: #34d399; border-radius: 4px;"></div>
-              </div>
-              <span style="color: #34d399; font-weight: 600; width: 60px; text-align: right;">+0.52%</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: 'JetBrains Mono', monospace;">
-              <span style="color: #cbd5e1; width: 220px;">aspi_return_30d</span>
-              <div style="flex: 1; height: 8px; background: #1e293b; border-radius: 4px; margin: 0 16px; position: relative;">
-                <div style="position: absolute; left: 50%; width: 24%; height: 100%; background: #34d399; border-radius: 4px;"></div>
-              </div>
-              <span style="color: #34d399; font-weight: 600; width: 60px; text-align: right;">+0.31%</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: 'JetBrains Mono', monospace;">
-              <span style="color: #cbd5e1; width: 220px;">rsi_14</span>
-              <div style="flex: 1; height: 8px; background: #1e293b; border-radius: 4px; margin: 0 16px; position: relative;">
-                <div style="position: absolute; right: 50%; width: 22%; height: 100%; background: #f87171; border-radius: 4px;"></div>
-              </div>
-              <span style="color: #f87171; font-weight: 600; width: 60px; text-align: right;">-0.28%</span>
-            </div>
-          </div>
         </div>
 
-        <!-- Layer 2: Domain Heuristics Alignment -->
-        <div class="card" style="border-left: 4px solid #38bdf8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="font-display" style="font-size: 17px; font-weight: 700; color: #f8fafc;">Layer 2: Domain Indicator Heuristics Alignment</span>
-            <span class="pill pill-cyan">Institutional Rule Engine</span>
+        <div class="card" style="border-left: 6px solid #38bdf8;">
+          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700;">
+            [ LAYER 2: DOMAIN HEURISTIC ALIGNMENT ]
           </div>
-
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-            <div style="background: #0b111c; padding: 14px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="pill pill-emerald" style="margin-bottom: 8px;">SUPPORTING</span>
-              <div class="font-mono" style="font-size: 13px; font-weight: 600; color: #f8fafc; margin-top: 4px;">RSI (14-Day)</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
-                Momentum expansion confirms bullish median trajectory without reaching overbought exhaustion (&lt;70).
-              </p>
-            </div>
-
-            <div style="background: #0b111c; padding: 14px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="pill pill-rose" style="margin-bottom: 8px;">REJECTING / RISK</span>
-              <div class="font-mono" style="font-size: 13px; font-weight: 600; color: #f8fafc; margin-top: 4px;">Parkinson Volatility</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
-                Elevated 20d dispersion widens the downside P10 boundary, signaling potential trend instability.
-              </p>
-            </div>
-
-            <div style="background: #0b111c; padding: 14px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="pill pill-slate" style="margin-bottom: 8px;">NEUTRAL</span>
-              <div class="font-mono" style="font-size: 13px; font-weight: 600; color: #f8fafc; margin-top: 4px;">Volume Surge Ratio</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
-                Trading activity tracks 20-day baseline average; neither confirms nor contradicts breakout velocity.
-              </p>
-            </div>
+          <div style="font-size: 20px; font-weight: 600; color: #f8fafc; margin: 8px 0;">
+            Trader Intuition Validation
           </div>
+          <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
+            Cross-verifies setup across Wilder RSI, 20/50 SMA trend, Parkinson volatility, and Volume surge into Supporting, Risk, or Neutral badges.
+          </p>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>DUAL-LAYER TECHNICAL INTERPRETABILITY</span>
-      <span class="footer-highlight">[04 / 05]</span>
+      <span>DUAL-LAYER TRANSPARENCY</span>
+      <span class="footer-highlight">Swipe &gt;</span>
     </div>
   </section>
 
-
   <!-- ========================================================================= -->
-  <!-- SLIDE 5: PRODUCTION DEPLOYMENT & EMPIRICAL RESULTS                         -->
+  <!-- SLIDE 5: EMPIRICAL RESULTS & STACK                                        -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <div class="badge-chip">
-        <span class="badge-indicator"></span>
-        [PRODUCTION SERVING]
-      </div>
-      <h1 class="slide-title">Production Stack &amp; Empirical Results</h1>
-      <p class="slide-subtitle">
-        Validated out-of-sample quantitative edge backed by an automated 100% free cloud deployment topology.
+      <span class="tag">[ 05 / RESULTS &amp; STACK ]</span>
+      <h1 class="hero-title">Empirical Results &amp; Live Architecture</h1>
+      <p class="hero-desc">
+        Validated out-of-sample edge deployed on a zero-cost 100% free cloud architecture.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- Metrics Ribbon -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 3px solid #38bdf8;">
-            <div class="font-display" style="font-size: 42px; font-weight: 700; color: #38bdf8;">58.3%</div>
-            <div class="font-mono" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin-top: 4px;">DIRECTIONAL ACCURACY</div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">+8.3% edge over 50% Naive Baseline</p>
-          </div>
-
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 3px solid #34d399;">
-            <div class="font-display" style="font-size: 42px; font-weight: 700; color: #34d399;">79.4%</div>
-            <div class="font-mono" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin-top: 4px;">EMPIRICAL COVERAGE</div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">Actuals contained inside P10-P90 cone</p>
-          </div>
-
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 3px solid #a855f7;">
-            <div class="font-display" style="font-size: 42px; font-weight: 700; color: #c084fc;">26 + 1</div>
-            <div class="font-mono" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin-top: 4px;">EQUITIES + ASPI</div>
-            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">Synced &amp; retrained daily at 15:00 SLST</p>
-          </div>
+      <!-- 3 Key Metric Cards -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 56px;">
+        <div class="card" style="text-align: center; padding: 32px 20px; border-top: 4px solid #38bdf8;">
+          <div class="stat-number" style="color: #38bdf8;">58.3%</div>
+          <div class="stat-label">DIRECTIONAL ACCURACY</div>
+          <div class="stat-sub">+8.3% over Random Walk</div>
         </div>
 
-        <!-- Cloud Architecture Topology Card -->
-        <div class="card" style="border-left: 4px solid #38bdf8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span class="font-display" style="font-size: 17px; font-weight: 700; color: #f8fafc;">Zero-Cost Enterprise Cloud Architecture</span>
-            <span class="pill pill-cyan">100% Free Tier</span>
-          </div>
+        <div class="card" style="text-align: center; padding: 32px 20px; border-top: 4px solid #34d399;">
+          <div class="stat-number" style="color: #34d399;">79.4%</div>
+          <div class="stat-label">EMPIRICAL COVERAGE</div>
+          <div class="stat-sub">Inside P10-P90 Envelope</div>
+        </div>
 
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
-            <div style="background: #0b111c; padding: 14px 18px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="font-mono" style="font-size: 11px; color: #38bdf8;">[FRONTEND TERMINAL]</span>
-              <div style="font-size: 15px; font-weight: 600; color: #f8fafc; margin-top: 4px;">Vercel Edge CDN</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">React 19 + TypeScript + TradingView Charts with fallback preview cache.</p>
-            </div>
+        <div class="card" style="text-align: center; padding: 32px 20px; border-top: 4px solid #c084fc;">
+          <div class="stat-number" style="color: #c084fc;">26+1</div>
+          <div class="stat-label">EQUITIES + ASPI</div>
+          <div class="stat-sub">Automated Daily Sync</div>
+        </div>
+      </div>
 
-            <div style="background: #0b111c; padding: 14px 18px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="font-mono" style="font-size: 11px; color: #38bdf8;">[BACKEND API SERVING]</span>
-              <div style="font-size: 15px; font-weight: 600; color: #f8fafc; margin-top: 4px;">Render Docker Service</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Containerized FastAPI exposing Pydantic-typed forecast &amp; explainability routes.</p>
-            </div>
-
-            <div style="background: #0b111c; padding: 14px 18px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="font-mono" style="font-size: 11px; color: #38bdf8;">[CLOUD DATABASE]</span>
-              <div style="font-size: 15px; font-weight: 600; color: #f8fafc; margin-top: 4px;">Supabase PostgreSQL 15</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Connection-pooled database storing prices, forecasts, and MLOps audit traces.</p>
-            </div>
-
-            <div style="background: #0b111c; padding: 14px 18px; border-radius: 8px; border: 1px solid #1e293b;">
-              <span class="font-mono" style="font-size: 11px; color: #38bdf8;">[POST-MARKET CRON]</span>
-              <div style="font-size: 15px; font-weight: 600; color: #f8fafc; margin-top: 4px;">GitHub Actions Workflows</div>
-              <p style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Triggers every weekday at 15:00 SLST for ingestion, model retraining, and deploy hooks.</p>
-            </div>
-          </div>
+      <!-- Cloud Stack -->
+      <div class="card" style="margin-top: 28px; border-left: 6px solid #38bdf8;">
+        <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">
+          [ ZERO-COST PRODUCTION STACK ]
+        </div>
+        <div class="font-mono" style="font-size: 15px; color: #f8fafc; line-height: 1.8;">
+          • Frontend: React 19 + TypeScript on Vercel Edge<br>
+          • Serving API: FastAPI Container on Render<br>
+          • Database: PostgreSQL 15 on Supabase<br>
+          • Pipeline: Automated Cron (15:00 SLST) on GitHub Actions
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>[Live Terminal] • [GitHub: madushanka-ti/cse-market-intelligence]</span>
+      <span>github.com/madushanka-ti/cse-market-intelligence</span>
       <span class="footer-highlight">[05 / 05]</span>
     </div>
   </section>
