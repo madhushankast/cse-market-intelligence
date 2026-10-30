@@ -19,11 +19,10 @@ export const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col gap-8 sm:gap-12 py-4 sm:py-6 max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl border border-borderline bg-gradient-to-b from-surface via-surface to-canvas p-5 sm:p-8 lg:p-12 shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand font-mono text-[10px] sm:text-xs mb-3 sm:mb-4">
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+      <section className="rounded-xl border border-borderline bg-surface p-5 sm:p-8 lg:p-10">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-subsurface border border-borderline text-gray-300 font-mono text-[10px] sm:text-xs mb-3 sm:mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-brand shrink-0" />
             <span className="truncate">INSTITUTIONAL QUANTITATIVE SERVING ENGINE</span>
           </div>
 
@@ -40,7 +39,7 @@ export const HomePage: React.FC = () => {
           <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <Link
               to="/terminal"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-sky-400 text-gray-950 font-semibold text-sm transition-all shadow-lg shadow-brand/20 hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-brand hover:bg-sky-400 text-gray-950 font-semibold text-sm transition-colors"
             >
               <TrendingUp className="w-4 h-4" />
               <span>Launch Trading Terminal</span>
@@ -49,7 +48,7 @@ export const HomePage: React.FC = () => {
 
             <Link
               to="/benchmarks"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-subsurface hover:bg-borderline border border-borderline text-gray-200 font-semibold text-sm transition-all hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-subsurface hover:bg-borderline border border-borderline text-gray-200 font-semibold text-sm transition-colors"
             >
               <Award className="w-4 h-4 text-brand" />
               <span>View Model Benchmarks</span>
@@ -89,10 +88,9 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* Card 2: Cumulative Log Return */}
-          <div className="p-6 rounded-xl bg-surface border border-brand/40 flex flex-col justify-between shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full blur-xl pointer-events-none" />
+          <div className="p-6 rounded-xl bg-surface border border-borderline flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-brand/10 border border-brand/20 text-brand flex items-center justify-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-subsurface border border-borderline text-brand flex items-center justify-center mb-4">
                 <Sliders className="w-5 h-5" />
               </div>
               <h3 className="text-base font-semibold text-gray-100 mb-2">

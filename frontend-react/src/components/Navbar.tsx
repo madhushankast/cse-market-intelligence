@@ -47,8 +47,8 @@ export const Navbar: React.FC = () => {
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
         {/* Brand identity */}
         <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-gradient-to-tr from-brand to-sky-400 flex items-center justify-center font-bold text-canvas shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform">
-            <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-950" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-subsurface border border-borderline flex items-center justify-center">
+            <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-brand" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">

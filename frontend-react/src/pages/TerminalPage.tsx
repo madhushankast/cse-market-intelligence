@@ -219,8 +219,7 @@ export const TerminalPage: React.FC = () => {
           </div>
 
           {/* 3. Expected Median Target (P50) */}
-          <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-3.5 sm:p-4 bg-surface border border-brand/40 rounded-xl flex flex-col justify-between shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-brand/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-brand font-semibold">
                 P50 Expected Target (30d)

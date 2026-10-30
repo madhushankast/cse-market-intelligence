@@ -109,8 +109,7 @@ export const BenchmarksPage: React.FC = () => {
       {/* Aggregate KPI Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* KPI 1: Mean Directional Accuracy */}
-        <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-3.5 sm:p-4 bg-surface border border-brand/40 rounded-xl flex flex-col justify-between shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-brand/5 rounded-full blur-xl pointer-events-none" />
+        <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
           <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-brand font-semibold">
             LightGBM Directional Acc
           </span>
