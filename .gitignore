@@ -48,6 +48,9 @@ htmlcov/
 *.log
 scratch/
 
+# Raw annual bulk trade dumps (regenerable / archived)
+data/raw/yearly/*.csv
+
 # Environment Variables & Secret Files
 .env
 .env.local
