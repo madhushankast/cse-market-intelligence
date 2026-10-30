@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1080, initial-scale=1.0">
-  <title>CSE Market Intelligence - Simple 5-Slide Carousel</title>
+  <title>CSE Market Intelligence - 5 Core Metrics Presentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -63,7 +63,7 @@
     }
     .hero-title {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 56px;
+      font-size: 54px;
       font-weight: 700;
       line-height: 1.15;
       letter-spacing: -0.03em;
@@ -71,7 +71,7 @@
       margin-bottom: 20px;
     }
     .hero-desc {
-      font-size: 23px;
+      font-size: 22px;
       line-height: 1.5;
       color: #94a3b8;
       max-width: 900px;
@@ -80,7 +80,7 @@
       background: #111722;
       border: 1px solid #1e293b;
       border-radius: 20px;
-      padding: 34px 38px;
+      padding: 32px 36px;
     }
     .skill-pill {
       display: inline-block;
@@ -114,269 +114,263 @@
 <body>
 
   <!-- ========================================================================= -->
-  <!-- SLIDE 1: THE BIG PROBLEM                                                 -->
+  <!-- SLIDE 1: THE PROBLEM                                                     -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <span class="tag">[ 01 / THE CORE PROBLEM ]</span>
-      <h1 class="hero-title">Why Most Stock AI Models Fail</h1>
+      <span class="tag">[ 01 / THE PROBLEM ]</span>
+      <h1 class="hero-title">Why Stock AI Models Fail</h1>
       <p class="hero-desc">
-        Most beginners make one critical mistake: trying to predict exact stock prices instead of trend and momentum.
+        Most financial machine learning models collapse in real trading due to two critical engineering traps.
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 52px;">
         <div class="card" style="border-left: 6px solid #f87171;">
           <div class="font-mono" style="font-size: 13px; color: #f87171; font-weight: 700;">
-            THE TRAP: PREDICTING RAW PRICES
+            TRAP 1: THE COPY-PASTE IDENTITY BUG
           </div>
           <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
-            The AI Just Copies Yesterday's Price
+            Predicting Raw Stock Prices (P_t+30)
           </div>
           <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            If a stock was Rs. 100 yesterday, the AI predicts Rs. 100 tomorrow. It shows fake "99% accuracy" on charts, but gives zero real trading value.
+            Because raw stock prices change slowly day-to-day, naive AI models simply output yesterday's price as tomorrow's forecast. It shows a fake "98% R² accuracy" on paper, but has <strong>zero real predictive value</strong>.
           </p>
         </div>
 
-        <div class="card" style="border-left: 6px solid #34d399;">
-          <div class="font-mono" style="font-size: 13px; color: #34d399; font-weight: 700;">
-            HOW I SOLVED IT
-          </div>
-          <div style="font-size: 22px; font-weight: 700; color: #34d399; margin: 10px 0;">
-            Predicting 30-Day Percentage Return &amp; Direction
-          </div>
-          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            I forced the models to learn whether a stock will grow or fall over the next month, discovering genuine market cycles across 26 top companies.
-          </p>
-        </div>
-
-        <div style="margin-top: 10px;">
-          <span class="skill-pill">Python</span>
-          <span class="skill-pill">Pandas</span>
-          <span class="skill-pill">NumPy</span>
-          <span class="skill-pill">Statistical Modeling</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="slide-footer">
-      <span>AI / ML SYSTEM ENGINEERING</span>
-      <span class="footer-highlight">Swipe &gt;</span>
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- SLIDE 2: DATA & INGESTION PIPELINE                                       -->
-  <!-- ========================================================================= -->
-  <section class="slide">
-    <div>
-      <span class="tag">[ 02 / DATA PIPELINE ]</span>
-      <h1 class="hero-title">Automated &amp; Fast Data Pipeline</h1>
-      <p class="hero-desc">
-        Good AI requires clean data. I built an end-to-end pipeline that tracks the Colombo Stock Exchange without manual work.
-      </p>
-
-      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 52px;">
-        <div class="card" style="border-left: 6px solid #38bdf8;">
-          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700;">
-            DAILY MARKET AUTOMATION
-          </div>
-          <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
-            Syncs Automatically at 3:00 PM Every Weekday
-          </div>
-          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            When the Colombo market closes, automated cloud workers fetch closing prices for 26 key companies plus the ASPI index, validate data, and update databases.
-          </p>
-        </div>
-
-        <div class="card" style="border-left: 6px solid #38bdf8;">
-          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700;">
-            FAST FEATURE ENGINE
-          </div>
-          <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
-            22 Market Indicators Calculated in Milliseconds
-          </div>
-          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            Automatically computes price volatility, RSI momentum, moving averages, and market correlations using ultra-fast columnar Parquet storage.
-          </p>
-        </div>
-
-        <div style="margin-top: 10px;">
-          <span class="skill-pill">Automated ETL</span>
-          <span class="skill-pill">Apache Parquet</span>
-          <span class="skill-pill">REST APIs</span>
-          <span class="skill-pill">Data Pipelines</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="slide-footer">
-      <span>AI / ML SYSTEM ENGINEERING</span>
-      <span class="footer-highlight">Swipe &gt;</span>
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- SLIDE 3: RISK ENVELOPES (NOT JUST ONE NUMBER)                            -->
-  <!-- ========================================================================= -->
-  <section class="slide">
-    <div>
-      <span class="tag">[ 03 / MACHINE LEARNING ]</span>
-      <h1 class="hero-title">Predicting Risk, Not Just One Number</h1>
-      <p class="hero-desc">
-        Nobody can predict the future with 100% certainty. Single price guesses are dangerous, so I built a 3-way risk envelope.
-      </p>
-
-      <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 52px;">
-        <div class="card" style="border-left: 6px solid #f87171; padding: 26px 32px;">
+        <div class="card" style="border-left: 6px solid #f87171;">
           <div class="font-mono" style="font-size: 13px; color: #f87171; font-weight: 700;">
-            DOWNSIDE FLOOR (WORST-CASE SCENARIO)
+            TRAP 2: LOOKAHEAD DATA LEAKAGE
           </div>
-          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 6px 0;">
-            P10 Risk Line
+          <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
+            Overlapping Future Data in Training
+          </div>
+          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
+            Standard random train/test splits accidentally let future 30-day stock returns leak into past training sets. The model memorizes future knowledge and fails completely in production.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>COLOMBO STOCK EXCHANGE (CSE) ML</span>
+      <span class="footer-highlight">Swipe &gt;</span>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SLIDE 2: HOW I SOLVED IT                                                 -->
+  <!-- ========================================================================= -->
+  <section class="slide">
+    <div>
+      <span class="tag">[ 02 / HOW I SOLVED IT ]</span>
+      <h1 class="hero-title">Stationary Targets &amp; Risk Cones</h1>
+      <p class="hero-desc">
+        I rebuilt the learning formulation and validation structure to ensure true out-of-sample edge.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 50px;">
+        <div class="card" style="border-left: 6px solid #34d399; padding: 26px 32px;">
+          <div class="font-mono" style="font-size: 13px; color: #34d399; font-weight: 700;">
+            1. PREDICTING 30-DAY FORWARD LOG RETURN
+          </div>
+          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 8px 0;">
+            y_t = ln( P_{t+30} / P_t )
           </div>
           <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
-            Shows where the stock could fall during bad market conditions so investors protect capital.
+            Forces the model to predict trend and momentum rather than raw nominal prices, achieving statistical stationarity across 26 equities.
           </p>
         </div>
 
         <div class="card" style="border-left: 6px solid #38bdf8; padding: 26px 32px;">
           <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700;">
-            EXPECTED PATH (MOST REALISTIC OUTCOME)
+            2. MULTI-QUANTILE RISK ENVELOPES (PINBALL LOSS)
           </div>
-          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 6px 0;">
-            P50 Median Line
+          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 8px 0;">
+            P10 Downside Floor + P50 Median + P90 Upside Ceiling
           </div>
           <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
-            The realistic expected 30-day trajectory, filtering out daily noise and false spikes.
+            Replaced dangerous single price guesses with probabilistic uncertainty envelopes, giving investors downside protection and realistic targets.
           </p>
         </div>
 
-        <div class="card" style="border-left: 6px solid #34d399; padding: 26px 32px;">
-          <div class="font-mono" style="font-size: 13px; color: #34d399; font-weight: 700;">
-            UPSIDE RESISTANCE (BEST-CASE POTENTIAL)
-          </div>
-          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 6px 0;">
-            P90 Growth Line
-          </div>
-          <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
-            Shows the upper resistance level if strong buying momentum continues.
-          </p>
-        </div>
-
-        <div style="margin-top: 6px;">
-          <span class="skill-pill">LightGBM</span>
-          <span class="skill-pill">Quantile AI</span>
-          <span class="skill-pill">Risk Modeling</span>
-          <span class="skill-pill">Scikit-Learn</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="slide-footer">
-      <span>AI / ML SYSTEM ENGINEERING</span>
-      <span class="footer-highlight">Swipe &gt;</span>
-    </div>
-  </section>
-
-  <!-- ========================================================================= -->
-  <!-- SLIDE 4: EXPLAINABLE AI                                                   -->
-  <!-- ========================================================================= -->
-  <section class="slide">
-    <div>
-      <span class="tag">[ 04 / EXPLAINABLE AI ]</span>
-      <h1 class="hero-title">Why Did the AI Make This Call?</h1>
-      <p class="hero-desc">
-        Most AI models are mysterious "black boxes". You cannot trust real money to a black box, so I built full transparency into every prediction.
-      </p>
-
-      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 52px;">
-        <div class="card" style="border-left: 6px solid #c084fc;">
+        <div class="card" style="border-left: 6px solid #c084fc; padding: 26px 32px;">
           <div class="font-mono" style="font-size: 13px; color: #c084fc; font-weight: 700;">
-            FEATURE IMPACT BREAKDOWN (SHAP)
+            3. PURGED &amp; EMBARGOED CROSS-VALIDATION
           </div>
-          <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
-            Every Prediction Explains Its Reasons
+          <div style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 8px 0;">
+            30-Day Purge Gap + 30-Day Embargo Buffer
           </div>
-          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            Users see exact factors driving the score: e.g. <span style="color: #34d399; font-weight: 600;">+2.4%</span> strong momentum, <span style="color: #f87171; font-weight: 600;">-1.2%</span> high market volatility, <span style="color: #38bdf8; font-weight: 600;">+0.8%</span> sector trend.
+          <p style="font-size: 16px; color: #94a3b8; line-height: 1.5;">
+            Guarantees 100% leak-free evaluation by removing overlapping return labels and killing autoregressive spillover.
           </p>
-        </div>
-
-        <div class="card" style="border-left: 6px solid #38bdf8;">
-          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700;">
-            HUMAN-READABLE HEALTH BADGES
-          </div>
-          <div style="font-size: 22px; font-weight: 700; color: #f8fafc; margin: 10px 0;">
-            Instant Decision Checklist
-          </div>
-          <p style="font-size: 17px; color: #94a3b8; line-height: 1.6;">
-            Translates complex numbers into clear signals: <strong style="color: #34d399;">SUPPORTING</strong> (trend is healthy), <strong style="color: #f87171;">RISK WARNING</strong> (overheated price), or <strong style="color: #94a3b8;">NEUTRAL</strong> (consolidation).
-          </p>
-        </div>
-
-        <div style="margin-top: 10px;">
-          <span class="skill-pill">SHAP Explainability</span>
-          <span class="skill-pill">Decision Intelligence</span>
-          <span class="skill-pill">Transparent AI</span>
         </div>
       </div>
     </div>
 
     <div class="slide-footer">
-      <span>AI / ML SYSTEM ENGINEERING</span>
+      <span>COLOMBO STOCK EXCHANGE (CSE) ML</span>
       <span class="footer-highlight">Swipe &gt;</span>
     </div>
   </section>
 
   <!-- ========================================================================= -->
-  <!-- SLIDE 5: FULL-STACK ARCHITECTURE & RESULTS                                -->
+  <!-- SLIDE 3: ARCHITECTURE                                                    -->
   <!-- ========================================================================= -->
   <section class="slide">
     <div>
-      <span class="tag">[ 05 / FULL-STACK DEPLOYMENT ]</span>
-      <h1 class="hero-title">Built, Tested &amp; Live in the Cloud</h1>
+      <span class="tag">[ 03 / SYSTEM ARCHITECTURE ]</span>
+      <h1 class="hero-title">End-to-End Cloud Architecture</h1>
       <p class="hero-desc">
-        Not just a notebook script. A complete, production-grade cloud application running 24/7.
+        A resilient, production-grade cloud topology designed for automated daily operation.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 48px;">
+      <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 48px;">
+        <div class="card" style="border-left: 6px solid #38bdf8; padding: 22px 28px;">
+          <div class="font-mono" style="font-size: 12px; color: #38bdf8; font-weight: 700;">1. DATA INGESTION ENGINE</div>
+          <div style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 4px 0;">Daily Automated CSE Scraper</div>
+          <p style="font-size: 15px; color: #94a3b8;">Automated cron jobs execute at 15:00 SLST market close, syncing 26 blue chips + ASPI index.</p>
+        </div>
+
+        <div class="card" style="border-left: 6px solid #38bdf8; padding: 22px 28px;">
+          <div class="font-mono" style="font-size: 12px; color: #38bdf8; font-weight: 700;">2. VECTORIZED LAKEHOUSE</div>
+          <div style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 4px 0;">Apache Parquet Feature Store</div>
+          <p style="font-size: 15px; color: #94a3b8;">Zero-copy columnar format computing 22 indicators (Parkinson volatility, RSI, MACD, beta) in milliseconds.</p>
+        </div>
+
+        <div class="card" style="border-left: 6px solid #34d399; padding: 22px 28px;">
+          <div class="font-mono" style="font-size: 12px; color: #34d399; font-weight: 700;">3. BACKEND SERVING API</div>
+          <div style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 4px 0;">Dockerized FastAPI on Render</div>
+          <p style="font-size: 15px; color: #94a3b8;">High-speed REST API executing real-time multi-quantile LightGBM inferences and TreeSHAP explainability.</p>
+        </div>
+
+        <div class="card" style="border-left: 6px solid #c084fc; padding: 22px 28px;">
+          <div class="font-mono" style="font-size: 12px; color: #c084fc; font-weight: 700;">4. DATABASE &amp; FRONTEND</div>
+          <div style="font-size: 18px; font-weight: 700; color: #f8fafc; margin: 4px 0;">Supabase PostgreSQL + React 19 on Vercel</div>
+          <p style="font-size: 15px; color: #94a3b8;">PostgreSQL database with composite PK idempotent upserts, paired with an interactive TradingView terminal.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>COLOMBO STOCK EXCHANGE (CSE) ML</span>
+      <span class="footer-highlight">Swipe &gt;</span>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SLIDE 4: TECH USED                                                       -->
+  <!-- ========================================================================= -->
+  <section class="slide">
+    <div>
+      <span class="tag">[ 04 / TECHNOLOGIES USED ]</span>
+      <h1 class="hero-title">Production Tech Stack</h1>
+      <p class="hero-desc">
+        Modern tools and frameworks chosen for speed, scalability, and zero hosting costs.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 50px;">
+        <div class="card" style="border-top: 5px solid #34d399;">
+          <div class="font-mono" style="font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 12px;">
+            AI &amp; MACHINE LEARNING
+          </div>
+          <div style="font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+            • <strong>LightGBM</strong> (Multi-Quantile Pinball)<br>
+            • <strong>Scikit-Learn</strong> (Time-series splits)<br>
+            • <strong>TreeSHAP</strong> (Explainable AI)<br>
+            • <strong>NumPy &amp; Pandas</strong> (Math &amp; series)
+          </div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid #38bdf8;">
+          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 12px;">
+            DATA ENGINEERING
+          </div>
+          <div style="font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+            • <strong>Apache Parquet</strong> (Columnar store)<br>
+            • <strong>DuckDB &amp; PyArrow</strong> (Zero-copy)<br>
+            • <strong>Vectorized Indicators</strong> (22 metrics)<br>
+            • <strong>Automated Cron</strong> (Daily ETL)
+          </div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid #c084fc;">
+          <div class="font-mono" style="font-size: 13px; color: #c084fc; font-weight: 700; margin-bottom: 12px;">
+            BACKEND &amp; CLOUD
+          </div>
+          <div style="font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+            • <strong>Python FastAPI</strong> (REST API)<br>
+            • <strong>Docker</strong> (Containerization)<br>
+            • <strong>Supabase</strong> (PostgreSQL 15)<br>
+            • <strong>GitHub Actions</strong> (CI/CD)
+          </div>
+        </div>
+
+        <div class="card" style="border-top: 5px solid #f87171;">
+          <div class="font-mono" style="font-size: 13px; color: #f87171; font-weight: 700; margin-bottom: 12px;">
+            FRONTEND &amp; UI
+          </div>
+          <div style="font-size: 15px; color: #cbd5e1; line-height: 1.8;">
+            • <strong>React 19 &amp; TypeScript</strong><br>
+            • <strong>TradingView Charts</strong><br>
+            • <strong>Vercel Edge</strong> (CDN)<br>
+            • <strong>Pytest</strong> (29 Test Suite)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>COLOMBO STOCK EXCHANGE (CSE) ML</span>
+      <span class="footer-highlight">Swipe &gt;</span>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SLIDE 5: ACCURACIES & RESULTS                                             -->
+  <!-- ========================================================================= -->
+  <section class="slide">
+    <div>
+      <span class="tag">[ 05 / ACCURACIES &amp; RESULTS ]</span>
+      <h1 class="hero-title">Empirical Results &amp; Accuracies</h1>
+      <p class="hero-desc">
+        Rigorous out-of-sample metrics proving real market edge over random walk baselines.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 50px;">
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 4px solid #38bdf8;">
+          <div class="card" style="text-align: center; padding: 26px 16px; border-top: 4px solid #38bdf8;">
             <div class="font-display" style="font-size: 46px; font-weight: 700; color: #38bdf8;">58.3%</div>
-            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">DIRECTION ACCURACY</div>
-            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Outperforms 50/50 odds</div>
+            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">DIRECTIONAL ACCURACY</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">+8.3% over Random Walk (50%)</div>
           </div>
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 4px solid #34d399;">
+          <div class="card" style="text-align: center; padding: 26px 16px; border-top: 4px solid #34d399;">
             <div class="font-display" style="font-size: 46px; font-weight: 700; color: #34d399;">79.4%</div>
-            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">RISK ENVELOPE</div>
-            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Prices stay within cone</div>
+            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">EMPIRICAL COVERAGE</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Inside P10-P90 Risk Cone</div>
           </div>
-          <div class="card" style="text-align: center; padding: 24px 16px; border-top: 4px solid #c084fc;">
+          <div class="card" style="text-align: center; padding: 26px 16px; border-top: 4px solid #c084fc;">
             <div class="font-display" style="font-size: 46px; font-weight: 700; color: #c084fc;">26+1</div>
-            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">COMPANIES &amp; INDEX</div>
-            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Updated daily on cloud</div>
+            <div class="font-mono" style="font-size: 12px; font-weight: 700; color: #f8fafc; margin-top: 6px;">ASSETS TRACKED</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Equities + ASPI Index</div>
           </div>
+        </div>
+
+        <div class="card" style="border-left: 6px solid #34d399;">
+          <div class="font-mono" style="font-size: 13px; color: #34d399; font-weight: 700; margin-bottom: 8px;">
+            KEY ENGINEERING TAKEAWAY
+          </div>
+          <p style="font-size: 16px; color: #cbd5e1; line-height: 1.7;">
+            By replacing naive raw price prediction with <strong>stationary 30-day forward returns</strong> and <strong>purged cross-validation</strong>, the model achieves a statistically significant <strong>+8.3% directional edge</strong> across all 26 Colombo Stock Exchange blue chips without overfitting.
+          </p>
         </div>
 
         <div class="card" style="border-left: 6px solid #38bdf8;">
-          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 10px;">
-            THE COMPLETE SOFTWARE STACK
+          <div class="font-mono" style="font-size: 13px; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">
+            TESTING &amp; AUDITING
           </div>
-          <div style="font-size: 16px; color: #cbd5e1; line-height: 1.8;">
-            • <strong>Frontend Dashboard:</strong> React 19 + TypeScript + TradingView Charts<br>
-            • <strong>Backend AI API:</strong> Python FastAPI inside a Docker container<br>
-            • <strong>Cloud Database:</strong> PostgreSQL 15 on Supabase<br>
-            • <strong>Automation:</strong> GitHub Actions daily sync &amp; automated test suite
-          </div>
-        </div>
-
-        <div style="margin-top: 6px;">
-          <span class="skill-pill">React 19</span>
-          <span class="skill-pill">TypeScript</span>
-          <span class="skill-pill">FastAPI</span>
-          <span class="skill-pill">Docker</span>
-          <span class="skill-pill">PostgreSQL</span>
-          <span class="skill-pill">CI/CD</span>
+          <p style="font-size: 16px; color: #cbd5e1; line-height: 1.7;">
+            <strong>29 automated Pytest unit tests</strong> run in CI/CD pipeline verifying: TreeSHAP exact mathematical additivity, zero lookahead leakage, data pipeline idempotency, and API endpoints.
+          </p>
         </div>
       </div>
     </div>

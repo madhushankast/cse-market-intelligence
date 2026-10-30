@@ -1,93 +1,64 @@
 # Colombo Stock Exchange (CSE) Market Intelligence Platform
-## LinkedIn Post & CV / Resume Master Assets for ML / AI / Software Engineer
+## 5-Pillar Portfolio Master Assets for ML / AI / Software Engineer
 
 ---
 
-## 1. LinkedIn Post (Ready to Copy & Paste)
+## 1. LinkedIn Post (Strictly 5 Pillars: Problem, Solution, Architecture, Tech, Accuracies)
 
 > **Instructions for LinkedIn:**
-> 1. Export your 5 slides from `docs/linkedin_presentation_deck.pptx` or print `docs/linkedin_presentation_deck.html` to PDF.
-> 2. On LinkedIn, click **Start a post** $\to$ Click the **Document icon** (Add document) $\to$ Upload your PDF.
-> 3. Document Title: `Why Most Stock AI Models Fail (And How to Build Real Financial ML)`
-> 4. Paste the text below into the post caption:
+> 1. Export the 5 slides from `docs/linkedin_presentation_deck.pptx` or print `docs/linkedin_presentation_deck.html` to PDF.
+> 2. On LinkedIn, click **Start a post** $\to$ Click the **Document icon** $\to$ Upload your PDF.
+> 3. Document Title: `Colombo Stock Exchange (CSE) ML Platform: 5 Core Pillars`
+> 4. Paste the text below:
 
 ```markdown
-Most machine learning projects on stock markets fail for one simple reason:
+Most stock market AI models fail in live trading. Here is how I engineered an end-to-end Quantitative Market Intelligence Platform for the Colombo Stock Exchange (CSE) across 5 core engineering pillars:
 
-They try to predict tomorrow’s exact price. 📉
+🚨 1. THE PROBLEM
+Predicting raw stock prices is an anti-pattern. Because prices move slowly day-to-day, naive AI models just output yesterday's price as tomorrow's prediction. They boast a fake "98% R² accuracy" on paper, but have ZERO trading value. Furthermore, standard train/test splits cause lookahead data leakage, causing models to collapse in production.
 
-If a stock closed at Rs. 100 today, a naive model will predict Rs. 100 tomorrow. It displays a deceptive 98% R² score, but in reality, it just built an expensive copy-paste machine with ZERO trading alpha.
+💡 2. HOW I SOLVED IT
+- Stationary Return Modeling: Instead of nominal prices, I modeled 30-day cumulative forward log returns [y = ln(P_t+30 / P_t)], forcing the models to learn real momentum and market cycles across 26 equities.
+- Uncertainty Risk Envelopes: Replaced single price guesses with Multi-Quantile LightGBM (Pinball Loss) predicting a P10 downside floor, P50 median path, and P90 upside expansion.
+- Leakage-Free Validation: Implemented an expanding 5-fold cross-validation engine with a 30-day purge buffer and 30-day embargo gap.
 
-Over the past few weeks, I engineered and deployed an end-to-end Quantitative Market Intelligence Platform for the Colombo Stock Exchange (CSE) to tackle this problem with actual engineering rigor.
+🏗️ 3. SYSTEM ARCHITECTURE
+- Data Ingestion: Automated daily cron jobs syncing 26 CSE companies + ASPI index at 15:00 SLST market close.
+- Vectorized Lakehouse: High-speed Apache Parquet store computing 22 indicators (Parkinson volatility, RSI, MACD, beta) in milliseconds.
+- Backend API: Dockerized Python FastAPI on Render running real-time inferences and TreeSHAP explainability.
+- Database & Web App: Supabase PostgreSQL (composite-key idempotent upserts) paired with a React 19 + TypeScript + TradingView terminal on Vercel.
 
-Here is how I designed it from data pipeline to cloud deployment:
+⚙️ 4. TECHNOLOGIES USED
+- AI & ML: LightGBM (Quantile Pinball Loss), Scikit-Learn, TreeSHAP Explainability, NumPy, Pandas.
+- Data Engineering: Apache Parquet, DuckDB, PyArrow, Automated ETL Pipelines.
+- Backend & Cloud: Python FastAPI, Docker Containers, PostgreSQL (Supabase), GitHub Actions CI/CD.
+- Frontend & UI: React 19, TypeScript, TradingView Lightweight Charts, Vercel Edge.
 
-🔹 1. Formulated a Stationary Target
-Instead of predicting nominal price levels, I modeled 30-day cumulative forward returns [y = ln(P_t+30 / P_t)]. This eliminates the unit-root persistence trap and forces the model to learn real momentum and mean-reversion cycles across 26 CSE blue-chip equities.
+📊 5. ACCURACIES & RESULTS
+- 58.3% Directional Accuracy (+8.3% statistical edge over random walk baseline).
+- 79.4% Empirical Coverage (actual prices remain inside the predicted P10-P90 risk envelope).
+- 26 + 1 Tracked Assets updated daily in production.
+- Audited via 29 automated Pytest unit tests in CI/CD verifying mathematical SHAP additivity and zero lookahead leakage.
 
-🔹 2. Built a Zero-Copy Data Lakehouse
-Engineered a high-throughput columnar pipeline using Apache Parquet and DuckDB. Automated GitHub Actions cron jobs sync post-market data at 15:00 SLST daily, computing 22 vectorized market indicators (Parkinson volatility, Wilder RSI, MACD, and systematic ASPI beta) in milliseconds.
+Swipe through the carousel below to see the visual breakdown! 👇
 
-🔹 3. Quantified Uncertainty with Pinball Loss
-Point forecasts are dangerous in volatile emerging markets. I trained Multi-Quantile LightGBM models minimizing Pinball Loss across 3 separate risk cones:
-- P10 Floor: Downside Value-at-Risk boundary (penalizes extreme drawdowns 9x)
-- P50 Median: Robust expected return path
-- P90 Ceiling: Bullish momentum expansion resistance
-
-🔹 4. Dual-Layer Explainable AI (XAI)
-No "black boxes". Every inference breaks down into exact additive TreeSHAP contributions verified with unit tests, coupled with institutional trader health badges (Supporting, Risk Warning, Neutral).
-
-🔹 5. 100% Live Cloud Deployment
-- Backend: Containerized Python FastAPI with Docker on Render
-- Frontend: React 19 + TypeScript + TradingView Lightweight Charts on Vercel
-- Database: PostgreSQL 15 on Supabase with composite-key idempotent upserts
-- Validation: 58.3% directional accuracy (+8.3% over random walk) with 79.4% empirical envelope coverage.
-
-Swipe through the carousel below to see the architecture breakdown! 👇
-
-Full open-source code & documentation:
 🔗 GitHub: https://github.com/madhushankast/cse-market-intelligence
 
-I’d love to hear feedback from quant researchers, ML engineers, and full-stack architects!
-
-#MachineLearning #SoftwareEngineering #MLOps #Python #React #FastAPI #CloudArchitecture #QuantitativeFinance #DataEngineering #AI
+#MachineLearning #SoftwareEngineering #DataEngineering #Python #React #FastAPI #Docker #QuantitativeFinance #MLOps #AI
 ```
 
 ---
 
-## 2. Resume / CV Master Entries (Select the Version that Fits Your Resume Layout)
+## 2. CV / Resume Description (Strictly 5 Pillars Format)
 
-### Option A: Comprehensive Bullet Points (For 1-Page / 2-Page Tech Resume)
+### For ML / AI / Software Engineer Resumes:
 
-**Colombo Stock Exchange (CSE) Quantitative Market Intelligence Platform** | *Lead AI / Full-Stack Engineer*  
-*Tech Stack: Python, LightGBM, Scikit-Learn, SHAP, Apache Parquet, DuckDB, FastAPI, Docker, PostgreSQL (Supabase), React 19, TypeScript, GitHub Actions*  
+**CSE Quantitative Market Intelligence Platform** | *ML / Full-Stack Engineer*  
+*Tech Stack: Python, LightGBM, Scikit-Learn, TreeSHAP, Apache Parquet, DuckDB, FastAPI, Docker, PostgreSQL, React 19, TypeScript*  
 *GitHub: github.com/madhushankast/cse-market-intelligence*
 
-- **End-to-End Financial ML Architecture**: Engineered and deployed an automated cloud platform analyzing 26 listed CSE equities and the All Share Price Index (ASPI), achieving **58.3% out-of-sample directional accuracy** (+8.3% edge over random walk baseline).
-- **Time-Series Stationarity & Target Engineering**: Formulated a stationary 30-day forward log return target ($y_t = \ln(P_{t+30}/P_t)$), eliminating the $I(1)$ unit root persistence trap where naive models yield trivial identity predictions.
-- **Leakage-Free Validation & Quantile Regression**: Built a custom expanding 5-fold walk-forward cross-validation engine enforcing a **30-day purge buffer** and **30-day embargo gap**; trained Multi-Quantile LightGBM optimizing asymmetric Pinball Loss ($P_{10}, P_{50}, P_{90}$), capturing **79.4% of real price moves** within predictive risk envelopes.
-- **Vectorized Data Lakehouse**: Designed a zero-copy columnar feature store using Apache Parquet and DuckDB to compute 22 market microstructure features (Parkinson volatility, Wilder RSI, MACD, ASPI relative beta) in sub-millisecond execution times.
-- **Explainable AI (XAI) Engine**: Implemented exact additive TreeSHAP local attributions ($y = \phi_0 + \sum \phi_i$) backed by automated unit tests enforcing mathematical additivity, mapped to domain heuristic validation badges (Supporting, Risk, Neutral).
-- **Full-Stack Cloud Deployment & CI/CD**: Shipped a containerized Python FastAPI REST API (Docker) on Render, an interactive React 19 + TypeScript terminal with TradingView charts on Vercel, Supabase PostgreSQL, and automated daily post-market ETL/retraining workflows via GitHub Actions.
-
----
-
-### Option B: Concise Version (3 Bullet Points for High-Density Resumes)
-
-**CSE Market Intelligence Platform** | *Python, LightGBM, FastAPI, React 19, Docker, Supabase, CI/CD*  
-*Link: github.com/madhushankast/cse-market-intelligence*
-
-- Architected a cloud-native quantitative intelligence system for 26 Colombo Stock Exchange equities, achieving **58.3% directional accuracy** via stationary target formulation and multi-quantile LightGBM ($P_{10}, P_{50}, P_{90}$ Pinball Loss).
-- Prevented time-series lookahead leakage by engineering a custom expanding 5-fold Purged & Embargoed walk-forward cross-validation pipeline, processing 22 vectorized technical indicators via an Apache Parquet/DuckDB lakehouse.
-- Deployed a production-ready zero-cost cloud topology: Dockerized FastAPI backend on Render, React 19/TypeScript dashboard on Vercel, Supabase PostgreSQL, automated daily GitHub Actions post-market ETL, and unit-tested TreeSHAP explainability.
-
----
-
-## 3. Skills Matrix for LinkedIn / Resume Profile
-
-Copy and paste these exact keywords into your LinkedIn **Skills** section or resume header:
-
-* **Machine Learning & AI**: Time-Series Forecasting, Quantile Regression, Gradient Boosted Trees (LightGBM), Scikit-Learn, Explainable AI (SHAP / TreeSHAP), Feature Engineering, Statistical Stationarity, Validation Design.
-* **Data Engineering & MLOps**: Apache Parquet, DuckDB, PyArrow, ETL Pipeline Automation, Purged & Embargoed Cross-Validation, Continuous Integration / Continuous Deployment (CI/CD), Model Auditing.
-* **Backend & Systems**: Python 3.11, FastAPI, REST APIs, Docker Containerization, PostgreSQL, Supabase, Automated Cron Workflows (GitHub Actions).
-* **Frontend & Visualization**: React 19, TypeScript, TradingView Lightweight Charts, Responsive UI, Vercel Edge.
+- **The Problem Addressed**: Overcame the time-series persistence trap where naive models predict raw nominal prices with trivial identity bias ($P_{t+30} \approx P_t$), and eliminated lookahead leakage inherent in standard train/test splits.
+- **How I Solved It**: Formulated a stationary quantitative target ($y_t = \ln(P_{t+30}/P_t)$) across 26 CSE equities; trained Multi-Quantile LightGBM models minimizing asymmetric Pinball Loss ($P_{10}, P_{50}, P_{90}$ risk envelopes); built a custom 5-fold Purged & Embargoed walk-forward cross-validation pipeline.
+- **System Architecture**: Designed and deployed an automated cloud lakehouse: post-market ingestion (15:00 SLST cron), zero-copy Parquet feature store, containerized FastAPI REST API (Docker) on Render, Supabase PostgreSQL, and React 19 / TradingView dashboard on Vercel.
+- **Technologies Used**: Python 3.11, LightGBM, Scikit-Learn, TreeSHAP, Apache Parquet, DuckDB, PyArrow, FastAPI, Docker, PostgreSQL, React 19, TypeScript, GitHub Actions CI/CD.
+- **Accuracies & Quantifiable Results**: Achieved **58.3% out-of-sample directional accuracy** (+8.3% edge over random walk) and **79.4% empirical coverage** within the predicted uncertainty cone across 26 equities; audited via 29 automated Pytest unit tests in CI/CD.
