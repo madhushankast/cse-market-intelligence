@@ -1,43 +1,16 @@
-name: CSE Daily Automated Retraining & Forecasting Pipeline
+name: Daily CSE Market Sync & Retraining
 
 on:
   schedule:
-    # 15:00 Sri Lanka Standard Time (UTC+5:30) Monday to Friday is 09:30 UTC
+    # 09:30 UTC = 15:00 SLST (Colombo Time) Monday through Friday
     - cron: '30 9 * * 1-5'
-  workflow_dispatch:
-    inputs:
-      retrain_models:
-        description: 'Whether to retrain LightGBM models on expanding history'
-        required: true
-        type: boolean
-        default: true
-      sync_live:
-        description: 'Whether to sync live daily bars from CSE API'
-        required: true
-        type: boolean
-        default: true
+  workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
-  run-daily-pipeline:
+  daily-mlops-job:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: cse_user
-          POSTGRES_PASSWORD: cse_password
-          POSTGRES_DB: cse_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python 3.11
@@ -46,28 +19,26 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install System & Python Dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Database Historical Backfill
+      - name: Execute Daily Ingestion, Retrain & Prediction
         env:
-          DATABASE_URL: postgresql+psycopg2://cse_user:cse_password@localhost:5432/cse_db
-        run: |
-          python scripts/backfill_postgres.py
-
-      - name: Execute Daily MLOps Ingestion, Retraining, and Forecasting Job
-        env:
-          DATABASE_URL: postgresql+psycopg2://cse_user:cse_password@localhost:5432/cse_db
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PYTHONPATH: .
         run: |
           python scripts/daily_pipeline_job.py
 
-      - name: Upload Models and Reports Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-mlops-artifacts
-          path: |
-            models/
-            reports/
-          retention-days: 14
+      - name: Trigger Render Deployment (Optional)
+        if: env.RENDER_DEPLOY_HOOK != ''
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          curl -X POST "$RENDER_DEPLOY_HOOK"

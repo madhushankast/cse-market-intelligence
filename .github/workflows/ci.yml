@@ -1,36 +1,45 @@
-name: CI Pipeline
+name: CI Test Suite
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   test:
-    name: Run Python Tests & Verifications
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install System Dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgomp1
 
-      - name: Install Python Dependencies
+      - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest httpx
 
-      - name: Run Test Suite
+      - name: Run Backend Integration & Feature Tests
         run: |
-          pytest -v tests/test_features.py tests/test_api.py tests/test_explainability.py tests/test_modeling.py
+          pytest -v
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify Frontend Production Build
+        run: |
+          cd frontend-react
+          npm install --legacy-peer-deps
+          npm run build
