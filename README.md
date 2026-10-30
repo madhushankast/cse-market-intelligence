@@ -1,220 +1,242 @@
-# Colombo Stock Exchange (CSE) 30-Day Return Forecasting Platform 📈🏛️
+# Colombo Stock Exchange (CSE) Quantitative Intelligence Platform 📈🏛️
 
+[![CI Pipeline](https://github.com/madushanka-ti/cse-market-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/madushanka-ti/cse-market-intelligence/actions/workflows/ci.yml)
+[![Daily Market Sync](https://github.com/madushanka-ti/cse-market-intelligence/actions/workflows/daily_schedule.yml/badge.svg)](https://github.com/madushanka-ti/cse-market-intelligence/actions/workflows/daily_schedule.yml)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 19](https://img.shields.io/badge/React-19.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![LightGBM](https://img.shields.io/badge/LightGBM-Multi_Quantile-FFCC00?style=for-the-badge&logo=sparkpost&logoColor=black)](https://lightgbm.readthedocs.io/)
-[![Storage](https://img.shields.io/badge/Storage-DuckDB_%26_Parquet-FFF000?style=for-the-badge&logo=duckdb&logoColor=black)](https://duckdb.org/)
-[![XAI](https://img.shields.io/badge/XAI-TreeSHAP-blueviolet?style=for-the-badge)](https://shap.readthedocs.io/)
-[![MLOps](https://img.shields.io/badge/MLOps-MLflow-0194E2?style=for-the-badge&logo=mlflow&logoColor=white)](https://mlflow.org/)
-[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![XAI TreeSHAP](https://img.shields.io/badge/XAI-TreeSHAP-8A2BE2?style=for-the-badge)](https://shap.readthedocs.io/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Container-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-A production-grade, institutional-quality MLOps platform engineered for the **Colombo Stock Exchange (CSE)**. The system relies **strictly on historical equities price and volume (OHLCV) time-series data** to generate **30-trading-day ahead multi-quantile return forecasts ($P_{10}, P_{50}, P_{90}$)** validated under strict **Purged & Embargoed Walk-Forward Cross-Validation**.
+An institutional-grade, end-to-end quantitative financial analytics and MLOps platform engineered specifically for the **Colombo Stock Exchange (CSE)**. The system processes equities price-volume dynamics and official ASPI benchmark movements to generate **30-trading-day ahead multi-quantile forecast trajectories ($P_{10}, P_{50}, P_{90}$)** under strict **Purged & Embargoed Walk-Forward Cross-Validation**, paired with mathematical **TreeSHAP** attribution and dual-layer indicator heuristic validation.
 
 ---
 
-## 🌟 Core Premise & Value Proposition
+## 🌟 The Financial ML Problem & Architectural Philosophy
 
-- **Pure Historical OHLCV Dynamics**:
-  The forecasting pipeline is deliberately decoupled from volatile macroeconomic announcements, Google Trends, and third-party sentiment feeds. Modeling relies **exclusively on clean equities market action**: `Open`, `High`, `Low`, `Close`, `Volume`, and their derived mathematical dynamics (Parkinson Volatility, RSI, MACD, EMAs/SMAs, and Bollinger Bands).
-- **30-Day Ahead Multi-Quantile Cones ($P_{10}, P_{50}, P_{90}$)**:
-  Rather than predicting raw nominal prices (which causes trivial lag-following identity models), the system optimizes asymmetric **Pinball Loss** on cumulative 30-day forward log returns:
-  $$y_t = \ln\left(\frac{P_{t+30}}{P_t}\right)$$
-  - **$P_{10}$**: Downside risk boundary (10th percentile).
-  - **$P_{50}$**: Median expected trajectory.
-  - **$P_{90}$**: Bullish growth boundary (90th percentile).
-- **Leak-Free Purged & Embargoed Walk-Forward CV**:
-  Because forward cumulative targets span 30 trading days, standard $K$-Fold cross-validation suffers from catastrophic label leakage. Our custom validation engine purges overlapping forward training labels and enforces a **30-trading-day embargo buffer**.
-- **Dual-Layer Technical Explainability (XAI)**:
-  1. *Mathematical Layer*: Exact **TreeSHAP** (Lundberg et al.) Shapley attributions decomposing each price/volume feature's contribution in return space.
-  2. *Retail Investor Heuristics*: Rule engine translating technical indicators (RSI overbought/oversold, 20-day SMA trend, MACD histogram, Parkinson volatility, and Bollinger Bands) into intuitive **"Supporting"** vs. **"Rejecting"** decision badges.
+### Why Predicting Nominal Raw Prices Fails (Anti-Pattern)
+In classical machine learning demos, models are frequently trained to predict raw tomorrow price $P_{t+1}$ using today price $P_t$. Because financial price series exhibit high persistence ($I(1)$ unit root processes), minimizing MSE produces trivial "identity delay" estimators ($\hat{P}_{t+1} \approx P_t$), which look accurate on paper ($R^2 > 0.98$) but generate zero actionable economic alpha.
+
+### The Quantitative Formulation
+This platform resolves the persistence trap by framing the learning problem around **cumulative forward log returns over a fixed 30-trading-day investment horizon**:
+
+$$y_t = \ln\left(\frac{P_{t+30}}{P_t}\right)$$
+
+- **Stationarity & Ergodicity**: Transforming prices to log returns induces covariance stationarity, allowing gradient boosting trees to discover non-linear cyclical and momentum patterns.
+- **Asymmetric Multi-Quantile Pinball Optimization**: Rather than conditional mean forecasting, the platform trains three distinct LightGBM estimators minimizing pinball loss across the return distribution:
+  $$\mathcal{L}_q(y, \hat{y}) = \max\left(q(y - \hat{y}), (1 - q)(\hat{y} - y)\right)$$
+  - **$P_{10}$ (Quantile $\alpha=0.10$)**: Downside Value-at-Risk / stress support boundary.
+  - **$P_{50}$ (Quantile $\alpha=0.50$)**: Median expected market trajectory.
+  - **$P_{90}$ (Quantile $\alpha=0.90$)**: Bullish expansion resistance boundary.
+- **Trajectory Mapping**: Trajectory coordinates across the 30-day forward cone are mapped as:
+  $$P_{t+h, q} = P_t \times \exp\left(r_q \times \frac{h}{30}\right), \quad h \in [1, 30]$$
+
+---
+
+## 🛡️ Leakage-Free Purged & Embargoed Walk-Forward Cross-Validation
+
+Standard $K$-Fold cross-validation destroys the temporal structure of financial time series and produces catastrophic lookahead bias. When training on a 30-day forward return target $y_t = \ln(P_{t+30}/P_t)$, any training observation within 30 days of the test window shares overlapping market realization data.
+
+```
+Time ───────────────────────────────────────────────────────────────────────────►
+Fold 1: [████████ Train ████████] [Purge: 30d] [Test: 60d] [Embargo: 30d]
+Fold 2: [████████████ Train ████████████] [Purge: 30d] [Test: 60d] [Embargo: 30d]
+Fold 3: [████████████████ Train ████████████████] [Purge: 30d] [Test: 60d] ...
+```
+
+Our custom `PurgedWalkForwardCV` engine guarantees zero leakage by enforcing:
+1. **Expanding Historical Training Windows**: Ensuring only past information informs future folds.
+2. **Purging Overlapping Labels**: Stripping training observations whose forward 30-day return window extends into the out-of-sample evaluation split.
+3. **Embargo Buffers (30 trading days)**: Preventing post-test auto-correlation leakage into subsequent folds.
+
+---
+
+## 🔍 Dual-Layer Explainable AI (XAI)
+
+High-stakes capital allocation requires full transparency into model decision-making. The platform implements a two-tier explainability architecture:
+
+1. **Layer 1: Mathematical TreeSHAP Attributions (Lundberg et al.)**
+   - Exact Shapley values calculated over tree ensemble paths to isolate individual feature contributions in return space:
+     $$\hat{f}(x) = \phi_0 + \sum_{i=1}^{M} \phi_i(x)$$
+   - Quantifies top positive drivers (e.g. Parkinson Volatility expansion, ASPI relative strength) and top negative drivers (e.g. RSI momentum exhaustion, volume contraction).
+2. **Layer 2: Domain Heuristics Alignment Engine**
+   - Bridges quantitative mathematics and institutional fundamental analysis.
+   - Cross-verifies model predictions against RSI-14, MACD histogram divergence, 20/50 SMA golden/death crosses, volume surge ratios, and Bollinger Band deviations to generate **Supporting**, **Rejecting / Risk Alert**, or **Neutral** signal cards.
 
 ---
 
 ## 🏗️ End-to-End System Architecture
 
 ```mermaid
-flowchart LR
-    subgraph S1["1. OHLCV INGESTION"]
-        direction TB
-        CSE["CSE Direct REST API\n(/api/companyChartDataByStock)"]
-        Raw["Raw Historical Archives\n(data/raw/cse/*.csv)"]
+flowchart TD
+    subgraph S1["1. Data Ingestion & Sync"]
+        CSE["CSE Direct API\n(Live End-of-Day)"] --> Sync["scripts/daily_market_sync.py"]
+        Raw["Historical Archives\n(data/raw/)"] --> Loader["StockDataLoader"]
     end
 
-    subgraph S2["2. TECHNICAL FEATURE STORE"]
-        direction TB
-        Tech["Technical Feature Engine\n(RSI, MACD, EMAs, Parkinson Vol)"]
-        Parquet[("Partitioned Parquet /\nDuckDB Storage")]
+    subgraph S2["2. Feature Engineering & Storage"]
+        Sync & Loader --> FE["TechnicalFeaturePipeline\n(Parkinson Vol, RSI, MACD, ASPI Relative)"]
+        FE --> Parquet[("Partitioned Parquet\n(data/processed/*.parquet)")]
+        FE --> Postgres[("PostgreSQL 15 / Supabase\n(ohlcv_bars, aspi_series)")]
     end
 
-    subgraph S3["3. MLOPS & MODELING"]
-        direction TB
-        CV["Purged Walk-Forward CV\n(30-Day Embargo Buffer)"]
-        LGBM["Multi-Quantile LightGBM\n(P10, P50, P90 Pinball Loss)"]
-        Base["Baselines\n(Prophet & Martingale Drift)"]
-        MLflow["MLflow Tracking Server"]
+    subgraph S3["3. MLOps & Modeling Engine"]
+        Parquet --> CV["PurgedWalkForwardCV\n(30-day Embargo)"]
+        CV --> LGBM["Multi-Quantile LightGBM\n(P10, P50, P90 Pinball)"]
+        LGBM --> Models[("Model Registry\n(models/{ticker}/)")]
+        LGBM --> Bench["Benchmark Summary\n(reports/cv_benchmark_summary.csv)"]
     end
 
-    subgraph S4["4. DUAL-LAYER XAI"]
-        direction TB
-        SHAP["TreeSHAP Attributions\n(Exact Shapley Values)"]
-        Heuristics["Heuristic Badge Engine\n(Supporting vs Rejecting)"]
+    subgraph S4["4. Dual-Layer XAI Engine"]
+        Models --> SHAP["TreeSHAP Engine\n(Shapley Attributions)"]
+        Models --> Heuristics["Indicator Heuristics Engine\n(Signal Alignment)"]
     end
 
-    subgraph S5["5. SERVING & UI"]
-        direction TB
-        API["FastAPI Engine\n(POST /predict, GET /explain)"]
-        UI["Streamlit Dashboard\n(Interactive Plotly Cones)"]
+    subgraph S5["5. Serving & Interactive UI"]
+        Models & SHAP & Heuristics --> FastAPI["FastAPI REST Server\n(:8000)"]
+        FastAPI --> React["React 19 + TypeScript Terminal\n(TradingView Charts + Cones)"]
     end
-
-    CSE & Raw --> Tech --> Parquet
-    Parquet --> CV --> LGBM & Base --> MLflow
-    LGBM --> SHAP & Heuristics
-    LGBM & SHAP & Heuristics --> API --> UI
 ```
 
 ---
 
-## 📊 Technology Stack
-
-| Domain | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Language & Runtime** | Python 3.11 | High-performance type-hinted runtime |
-| **Data Engine & Storage** | DuckDB, Apache Parquet, PyArrow, Pandas | Columnar, zero-copy analytics and partitioned caching |
-| **Machine Learning** | LightGBM, Scikit-Learn | Multi-quantile gradient boosting minimizing Pinball loss |
-| **Time-Series Baselines** | FB Prophet, Random Walk with Drift | Structural trend decomposition and benchmark tournament |
-| **Cross-Validation** | Custom `PurgedWalkForwardCV` | Leakage-free time-series splitting with embargo gap |
-| **Explainable AI (XAI)** | TreeSHAP (`shap`), Rule Engine | Exact Shapley attributions + heuristic badge alignment |
-| **Experiment Tracking** | MLflow | Metric logging, parameters, coverage, and model artifacts |
-| **Serving API** | FastAPI, Uvicorn, Pydantic v2 | High-throughput async REST API |
-| **Interactive Dashboard**| Streamlit, Plotly | Interactive forecast cones, SHAP waterfalls, and badge cards |
-| **Deployment** | Docker, Docker Compose | Production-grade containerization |
-
----
-
-## 📂 Project Directory Structure
+## 📂 Repository Directory Layout
 
 ```text
 cse-market-intelligence/
+├── .github/
+│   └── workflows/
+│       ├── daily_schedule.yml      # Post-market automated ingestion, retraining & forecasting
+│       ├── daily_ingest.yml        # EOD CSE ASPI and equities synchronization
+│       └── ci.yml                  # Automated pytest execution & linting on push/PR
 ├── configs/
-│   ├── model_config.yaml          # Quantiles [0.1, 0.5, 0.9], lag windows, and hyperparameters
-│   └── tickers.yaml               # Target CSE tickers (JKH.N0000, COMB.N0000, etc.)
+│   ├── model_config.yaml           # Quantile hyperparameters [0.10, 0.50, 0.90] & training config
+│   └── tickers.yaml                # Universe of 26 target CSE blue-chip equities & sector taxonomy
 ├── data/
-│   ├── raw/                       # Preserved historical stock CSVs (2021-2025 OHLCV)
-│   │   ├── cse/                   # 26 Blue-chip daily OHLCV files
-│   │   └── yearly/                # 2021.csv - 2025.csv annual transaction archives
-│   └── processed/                 # Partitioned Parquet feature datasets (.gitkeep preserved)
+│   ├── raw/                        # Primary historical raw archives and seed datasets
+│   └── processed/                  # Partitioned, zero-copy Parquet datasets (26 equities + ASPI)
 ├── src/
-│   ├── __init__.py
-│   ├── ingestion/
-│   │   ├── cse_scraper.py         # Session HTTP client querying official CSE API endpoints
-│   │   └── data_loader.py         # Standardizes column schemas & Parquet storage
-│   ├── features/
-│   │   └── technical_features.py  # Vectorized RSI, MACD, EMAs, Parkinson Volatility, target y_t
-│   ├── modeling/
-│   │   ├── walk_forward_cv.py     # Purged & embargoed walk-forward time-series CV engine
-│   │   ├── baseline_prophet.py    # FB Prophet baseline / trend decomposition benchmark
-│   │   ├── train_lightgbm.py      # Multi-quantile LightGBM training + MLflow tracking
-│   │   └── predict.py             # Inference pipeline generating 30-day forecast cones
-│   └── explainability/
-│       ├── shap_service.py        # TreeSHAP technical feature attributions for 30-day predictions
-│       └── heuristics_engine.py   # Rule engine mapping technical indicators to "Supporting" vs "Rejecting"
+│   ├── ingestion/                  # CSE official API client, scraper & daily sync service
+│   ├── features/                   # Leak-free technical indicator pipelines & ASPI alignment
+│   ├── modeling/                   # Purged walk-forward CV, Multi-Quantile LightGBM & baselines
+│   ├── explainability/             # TreeSHAP service & institutional heuristic validation engine
+│   └── database/                   # SQLAlchemy models, session pool & PostgreSQL migrations
 ├── api/
-│   ├── main.py                    # FastAPI server entrypoint
-│   └── routes/
-│       ├── predict.py             # POST /api/v1/predict/{symbol}
-│       └── explain.py             # GET /api/v1/explain/{symbol}
-├── frontend/
-│   └── app.py                     # Interactive Streamlit dashboard with Plotly forecast cones
-├── notebooks/
-│   └── 01_eda_and_cv_validation.ipynb # End-to-end interactive Walk-Forward & XAI workflow
-├── docs/
-│   ├── architecture.md            # Modern pipeline & MLOps system architecture
-│   ├── data_dictionary.md         # Schema of raw OHLCV and engineered technical features
-│   └── modeling_strategy.md       # Target formulation, Purged CV rationale, and XAI theory
-├── tests/
-│   ├── test_features.py           # Unit tests for indicator calculations & Parkinson volatility
-│   └── test_ingestion.py          # Unit tests for scraper parsing and data loading
-├── .gitignore                     # Production-grade Git exclusions
-├── Dockerfile                     # Optimized Python 3.11 container definition
-├── docker-compose.yml             # Orchestration for FastAPI + Streamlit
-├── requirements.txt               # Pinned core production dependencies
-└── README.md
+│   ├── main.py                     # FastAPI application entrypoint with CORS & health probes
+│   └── routes/                     # Modular API routers (/stocks, /predict, /benchmarks)
+├── frontend-react/                 # React 19 + TypeScript + Tailwind + TradingView Terminal
+│   ├── src/                        # Pages (Terminal, Benchmarks, Overview), components & charts
+│   ├── Dockerfile                  # Container definition for frontend
+│   └── vercel.json                 # Single-page application rewrites for Vercel edge deployment
+├── models/                         # Serialized production LightGBM model artifacts & metrics
+├── reports/                        # Purged walk-forward benchmark tournament summaries
+├── scripts/                        # Operational CLI tools, historical backfill & training scripts
+├── tests/                          # Automated unit and integration test suite (pytest)
+├── docs/                           # Architecture specifications, data dictionary & study guides
+├── .env.example                    # Sanitized environment configuration template
+├── .gitignore                      # Production-grade git exclusion rules
+├── Dockerfile.api                  # Container build for FastAPI serving engine
+├── Dockerfile.react                # Multi-stage container build for React frontend (Nginx)
+├── docker-compose.yml              # Local multi-service orchestration (Postgres + API + UI)
+├── requirements.txt                # Pinned production Python dependencies
+├── LICENSE                         # MIT Open-Source License
+└── README.md                       # Comprehensive platform documentation
 ```
 
 ---
 
 ## ⚡ Quickstart & Local Setup
 
-### 1. Prerequisites & Environment Setup
-Clone the repository and set up a virtual environment:
+### Prerequisites
+- **Python**: 3.11+
+- **Node.js**: 20+ (with `npm`)
+- **Docker & Docker Compose** (optional, for containerized run)
+
+---
+
+### Option A: 1-Click Multi-Service Docker Compose (Recommended)
+Launch the complete stack (Postgres Database, FastAPI backend, and React Terminal):
 
 ```bash
-# Using uv (Recommended for speed)
-uv venv --python 3.11
-.venv\Scripts\activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
-uv pip install -r requirements.txt
+# 1. Clone repository
+git clone https://github.com/madushanka-ti/cse-market-intelligence.git
+cd cse-market-intelligence
 
-# Or using standard python
+# 2. Build and launch all services in detached mode
+docker compose up --build -d
+
+# 3. Verify services
+docker compose ps
+```
+
+| Service | Access URL | Description |
+| :--- | :--- | :--- |
+| **Trading Terminal UI** | `http://localhost:3000` | React + TradingView Financial Terminal |
+| **FastAPI REST Server** | `http://localhost:8000` | REST API Backend |
+| **Swagger Interactive Docs** | `http://localhost:8000/docs` | Interactive OpenAPI documentation |
+| **PostgreSQL Database** | `localhost:5432` | Relational timeseries store |
+
+---
+
+### Option B: Local Manual Setup
+
+#### 1. Backend & API Service
+```bash
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate        # Linux/macOS
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
-```
 
-### 2. Run Test Suite
-Validate technical feature calculation, Parkinson volatility, and data ingestion:
+# Copy environment configuration
+cp .env.example .env
 
-```bash
-pytest tests/ -v
-```
-
-### 3. Launch FastAPI Serving Layer
-Start the async REST API:
-
-```bash
+# Start FastAPI serving server
 uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-- Swagger UI Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Interactive OpenAPI Spec: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 
-#### Example API Request:
+#### 2. React Financial Terminal
 ```bash
-# 30-Day Forecast Cone for John Keells Holdings (OHLCV-derived)
-curl -X POST "http://localhost:8000/api/v1/predict/JKH.N0000" \
-     -H "Content-Type: application/json" \
-     -d '{"horizon_days": 30}'
-
-# Dual-Layer Explainability (TreeSHAP + Heuristic Badges)
-curl -X GET "http://localhost:8000/api/v1/explain/JKH.N0000"
+cd frontend-react
+npm install
+npm run dev
 ```
+Open **`http://localhost:5173`** in your browser.
 
-### 4. Launch Interactive Streamlit Dashboard
-Launch the graphical interface:
+---
 
-```bash
-streamlit run frontend/app.py --server.port 8501
-```
-Explore interactive 30-day forecast cones, TreeSHAP impact bars, and technical heuristic badges.
+## 🧪 Automated Testing & Verification
 
-### 5. Run via Docker Compose
-To run both the backend API and frontend dashboard in containers:
+Run the comprehensive pytest suite verifying features, leakage-free alignment, API contracts, and TreeSHAP additivity:
 
 ```bash
-docker-compose up --build
+# Run all automated tests
+pytest -v
+
+# Run targeted test suites
+pytest -v tests/test_features.py
+pytest -v tests/test_api.py
+pytest -v tests/test_explainability.py
+pytest -v tests/test_modeling.py
 ```
 
 ---
 
-## 🔬 Scientific Highlights & Defense
+## 🔄 Daily Automated MLOps Pipeline
 
-1. **Why Strictly Historical Stock Data (OHLCV)?**
-   Macroeconomic series (e.g., quarterly GDP, monthly inflation) are released with significant publication lag (30 to 90 days), creating severe cross-frequency alignment pitfalls, revision risks, and lookahead vulnerability. Relying strictly on high-frequency equities market dynamics guarantees 100% point-in-time authenticity, zero external scraping failure points, and robust intraday/daily reproducibility.
-2. **Why Predict Quantiles ($P_{10}, P_{50}, P_{90}$)?**
-   Emerging markets like the CSE exhibit non-Gaussian fat-tailed distributions and structural volatility regimes. A single point estimate provides zero confidence context. Quantile regression bounds the distribution into an actionable 80% uncertainty envelope.
-3. **Purged Walk-Forward CV Realism**:
-   Multi-step forward returns ($y_t = \ln(P_{t+30}/P_t)$) create overlapping dependency windows. Purged Walk-Forward Cross-Validation discards overlapping training windows and adds an embargo gap, guaranteeing 100% leak-free out-of-sample evaluation.
+The platform is designed to operate autonomously without manual intervention:
+1. **Daily Market Close Sync**: Configured in `.github/workflows/daily_schedule.yml` to trigger at **15:00 Colombo Time (09:30 UTC)** post-market close.
+2. **Ingestion & Validation**: Scrapes official CSE closing prices, runs circuit breaker checks, and appends to partitioned Parquet files.
+3. **Model Refresh**: Fits expanding-window multi-quantile LightGBM models and updates TreeSHAP baselines.
+4. **Artifact Upload**: Deploys updated weights and cross-validation summaries directly to production serving storage.
 
 ---
 
-## 📄 License & Attribution
-Designed for quantitative financial research on the Colombo Stock Exchange. Open-source under the MIT License.
+## 📄 License
+This project is licensed under the terms of the [MIT License](LICENSE).

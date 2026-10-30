@@ -1,10 +1,17 @@
-# Git & IDE metadata
+# ==============================================================================
+# CSE Market Intelligence Platform - Docker Ignore
+# ==============================================================================
+
+# Version Control & IDE Metadata
 .git
 .github
 .gitignore
 .agents
 .idea
 .vscode
+.DS_Store
+Thumbs.db
+desktop.ini
 
 # Python Virtual Environments & Caches
 .venv
@@ -14,24 +21,23 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
-*.pytest_cache/
+.pytest_cache/
 .coverage
 htmlcov/
 
-# MLflow & Experiment Tracking Artifacts
-mlruns/
-mlartifacts/
-.mlflow/
+# Local Environment & Secrets
+.env
+.env.*
+!.env.example
 
 # Frontend Node/Build Artifacts
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
+node_modules/
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.vite/
 
 # Temporary, Scratch & Log Files
 *.tmp
 *.log
 *.parquet.tmp
 scratch/
-.DS_Store
-Thumbs.db

@@ -1,3 +1,7 @@
+# ==============================================================================
+# CSE Market Intelligence Platform - Production Git Ignore Configuration
+# ==============================================================================
+
 # Python Environments & Bytecode
 __pycache__/
 *.py[cod]
@@ -24,7 +28,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing & Type Checking
+# Testing, Coverage & Profiling
 .pytest_cache/
 .coverage
 htmlcov/
@@ -32,42 +36,27 @@ htmlcov/
 .nox/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
 
-# Data & Datasets
-# Preserve raw directory structure but exclude heavy generated / processed files
-data/processed/*
-!data/processed/.gitkeep
-data/raw/*
-!data/raw/.gitkeep
-!data/raw/cse/
-!data/raw/cse/*.csv
-!data/raw/trends/
-!data/raw/trends/*.csv
-!data/raw/yearly/
-!data/raw/yearly/*.csv
-!data/raw/*.csv
-
-# Databases & Cache
+# Local Databases, Dumps & Temp Files
 *.db
 *.sqlite
 *.sqlite3
 *.duckdb
 *.parquet.tmp
+*.tmp
+*.log
+scratch/
 
-# Trained Models & Serialized Weights
-*.pkl
-*.pickle
-*.joblib
-*.bin
-*.model
-models/saved/
+# Environment Variables & Secret Files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
 
-# MLflow Tracking & Artifacts
-mlruns/
-mlartifacts/
-.mlflow/
-
-# IDE & Operating System Metadata
+# IDE, OS & Editor Metadata
 .idea/
 .vscode/
 *.swp
@@ -77,13 +66,18 @@ mlartifacts/
 Thumbs.db
 desktop.ini
 
-# Environment Variables & Secrets
-.env
-.env.*
-!.env.example
+# MLflow Experiment Tracking
+mlruns/
+mlartifacts/
+.mlflow/
 
-# Node / Vite Frontend Artifacts
-frontend/node_modules/
-frontend/dist/
-frontend/.eslintcache
-frontend/*.local
+# Frontend (React + Vite) Build & Dependencies
+node_modules/
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.vite/
+frontend-react/.eslintcache
+frontend-react/*.local
+
+# Retain Critical Directories with .gitkeep
+!.gitkeep
