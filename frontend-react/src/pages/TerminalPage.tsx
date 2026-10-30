@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   fetchAvailableStocks,
   fetchPrediction,
+  API_BASE_URL,
   type StockQuote,
   type PredictionPayload,
 } from '../api';
@@ -40,7 +41,7 @@ export const TerminalPage: React.FC = () => {
       })
       .catch((err: any) => {
         console.error('Failed to load stocks:', err);
-        setError('Failed to fetch available stocks from the backend on http://localhost:8000.');
+        setError(`Failed to fetch available stocks from the backend on ${API_BASE_URL}.`);
         setLoading(false);
       });
   }, []);

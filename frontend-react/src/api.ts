@@ -1,11 +1,27 @@
 import axios from 'axios';
 import { FALLBACK_STOCKS, FALLBACK_JKH_PREDICTION, FALLBACK_BENCHMARKS } from './data/fallbackData';
 
-export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+export const LIVE_RENDER_API_URL = 'https://cse-market-intelligence.onrender.com';
+
+const defaultBaseUrl = import.meta.env.PROD
+  ? LIVE_RENDER_API_URL
+  : 'http://localhost:8000';
+
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || defaultBaseUrl)
+  .replace(/\/+$/, '')
+  .replace('cse-market-intelligence-api.onrender.com', 'cse-market-intelligence.onrender.com');
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   timeout: 35000, // Allow 35s for free tier cold starts (e.g. Render)
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+const remoteFallbackClient = axios.create({
+  baseURL: LIVE_RENDER_API_URL,
+  timeout: 35000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -121,8 +137,16 @@ export interface BenchmarkRecord {
 }
 
 export async function checkHealth(): Promise<HealthStatus> {
-  const resp = await client.get('/health');
-  return resp.data;
+  try {
+    const resp = await client.get('/health');
+    return resp.data;
+  } catch (err) {
+    if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+      const resp = await remoteFallbackClient.get('/health');
+      return resp.data;
+    }
+    throw err;
+  }
 }
 
 export async function fetchAvailableStocks(): Promise<StockQuote[]> {
@@ -133,6 +157,16 @@ export async function fetchAvailableStocks(): Promise<StockQuote[]> {
     }
     return FALLBACK_STOCKS;
   } catch (err) {
+    if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+      try {
+        const resp = await remoteFallbackClient.get('/api/v1/stocks');
+        if (resp.data && Array.isArray(resp.data.data) && resp.data.data.length > 0) {
+          return resp.data.data;
+        }
+      } catch {
+        // Ignore and proceed to static fallback
+      }
+    }
     console.warn(`[CSE API] Unable to connect to backend at ${API_BASE_URL}. Falling back to cached equities list.`);
     return FALLBACK_STOCKS;
   }
@@ -146,6 +180,16 @@ export async function fetchBenchmarks(): Promise<BenchmarkRecord[]> {
     }
     return FALLBACK_BENCHMARKS;
   } catch (err) {
+    if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+      try {
+        const resp = await remoteFallbackClient.get('/api/v1/benchmarks');
+        if (resp.data && Array.isArray(resp.data.data) && resp.data.data.length > 0) {
+          return resp.data.data;
+        }
+      } catch {
+        // Ignore and proceed to static fallback
+      }
+    }
     console.warn(`[CSE API] Unable to connect to backend at ${API_BASE_URL}. Falling back to cached benchmark report.`);
     return FALLBACK_BENCHMARKS;
   }
@@ -170,6 +214,18 @@ export async function fetchPrediction(
       });
       return { ...resp.data.data, is_fallback: false };
     } catch (innerErr) {
+      if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+        try {
+          const resp = await remoteFallbackClient.post('/api/v1/predict', {
+            symbol,
+            horizon_days: horizonDays,
+            explain: true,
+          });
+          return { ...resp.data.data, is_fallback: false };
+        } catch {
+          // Ignore and proceed to static fallback
+        }
+      }
       console.warn(`[CSE API] Live prediction failed for ${symbol} at ${API_BASE_URL}. Engaging fallback cache.`);
       
       const cleanSym = symbol.replace('.', '_');

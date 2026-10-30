@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cse-market-intelligence-api
+    name: cse-market-intelligence
     runtime: docker
     dockerfilePath: ./Dockerfile.api
     dockerContext: .

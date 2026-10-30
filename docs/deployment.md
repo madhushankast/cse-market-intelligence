@@ -40,7 +40,7 @@ The platform is designed to run indefinitely on resilient, zero-cost cloud tiers
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
 2. **Environment Variables**:
-   - `VITE_API_URL`: Your Render backend URL (e.g. `https://cse-market-intelligence-api.onrender.com`).
+   - `VITE_API_URL`: Your Render backend URL (e.g. `https://cse-market-intelligence.onrender.com`).
 3. Deploy. The platform is configured with `vercel.json` for single-page application routing.
 
 ---
