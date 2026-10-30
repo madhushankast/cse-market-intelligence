@@ -1,82 +1,112 @@
-# CSE Market Intelligence Platform: Production MLOps Architecture (OHLCV Only)
+# Architecture & System Design Specification
 
-The **Colombo Stock Exchange (CSE) Market Intelligence Platform** follows a decoupled, production-grade MLOps architecture designed for high scalability, leak-free time-series processing, and institutional-grade explainability strictly modeled on historical equities price and volume (OHLCV) dynamics.
+## 1. Executive Summary
+
+The **Colombo Stock Exchange (CSE) Market Intelligence Platform** is a production-grade, institutional-quality quantitative analytics and MLOps engine. It is architected specifically to analyze frontier equity markets by ingesting historical price-volume data from the Colombo Stock Exchange (CSE), computing statistical and technical signal dynamics relative to the official All Share Price Index (ASPI), and training multi-quantile gradient-boosted decision trees to forecast **30-trading-day forward cumulative return distributions**.
+
+The platform is designed around strict quantitative time-series principles:
+- **Zero Macro Leakage / Decoupled Data Scope**: The platform operates purely on official CSE historical equities feeds (26 listed tickers) and the official ASPI index.
+- **Stationarity over Persistence**: Avoiding nominal price forecasting in favor of forward log returns.
+- **Leak-Free Model Evaluation**: Purged and 30-day embargoed walk-forward cross-validation.
+- **Dual-Layer Explainability**: Mathematical local attribution (TreeSHAP) coupled with domain-specific rule-based heuristics.
+- **Tiered Hybrid Storage**: In-memory columnar Parquet/DuckDB for low-latency serving paired with managed PostgreSQL (Supabase) for long-term historical records and audit tracking.
 
 ---
 
-## 1. High-Level Architecture Diagram
+## 2. End-to-End System Topology
 
 ```mermaid
 flowchart TD
-    subgraph DataSources["Data Ingestion Layer (OHLCV Only)"]
-        A1["CSE REST API\n(cse.lk/api)"] -->|Daily OHLCV Polling| B1["CSEScraper\n(Session Adapter & Retry)"]
-        A2["Historical Stock Archives\n(data/raw/cse/*.csv)"] -->|Local File Ingestion| B2["CSEDataLoader\n(Schema Standardization)"]
+    subgraph DataIngestion ["1. Data Ingestion & Market Feeds"]
+        CSE_API["CSE Direct Market API\n(companyChartDataByStock & aspiData)"]
+        CronRunner["Automated Scheduler\n(GitHub Actions / scripts/daily_pipeline_job.py)"]
+        CSE_API --> CronRunner
     end
 
-    subgraph FeatureEngineering["Technical Feature Store & Cache"]
-        B1 & B2 --> C1["TechnicalFeatureEngine\n(RSI, MACD, EMAs, Parkinson Volatility, Lags)"]
-        C1 -->|Pure Price & Volume Signals| D1[("Partitioned Parquet /\nDuckDB Feature Store")]
+    subgraph DataLayer ["2. Storage & Hybrid Lakehouse"]
+        ParquetCache[("Columnar Parquet Lakehouse\ndata/processed/*.parquet")]
+        CloudDB[("PostgreSQL 15 (Supabase)\nstock_prices & aspi_index")]
+        CronRunner --> ParquetCache
+        CronRunner --> CloudDB
     end
 
-    subgraph ModelingValidation["MLOps Training & Purged Validation"]
-        D1 --> E1["PurgedWalkForwardCV\n(30-Day Forward Embargo Buffer)"]
-        E1 --> F1["MultiQuantileLGBMTrainer\n(P10, P50, P90 Pinball Loss)"]
-        E1 --> F2["Baselines\n(Prophet & Martingale Drift)"]
-        F1 --> G1["MLflow Tracking Server\n(Metrics, Coverage, Model Artifacts)"]
+    subgraph FeatureStore ["3. Technical Feature Engineering"]
+        Pipeline["TechnicalFeaturePipeline\n(Parkinson Vol, RSI, MACD, ASPI Betas)"]
+        ParquetCache --> Pipeline
+        CloudDB --> Pipeline
     end
 
-    subgraph Explainability["Dual-Layer Explainability Engine"]
-        F1 --> H1["TreeSHAP Service\n(Exact Shapley Feature Attributions)"]
-        D1 --> H2["Heuristics Engine\n(Supporting vs Rejecting Signals)"]
+    subgraph ModelingEngine ["4. MLOps, Validation & Inference"]
+        CV["Purged & Embargoed Walk-Forward CV\n(5 Expanding Folds, 30-Day Embargo Gap)"]
+        LGBM["Multi-Quantile LightGBM\n(P10, P50, P90 Pinball Loss)"]
+        XAI_SHAP["Layer 1: TreeSHAP Attributions"]
+        XAI_Heuristics["Layer 2: Domain Heuristics Engine"]
+        Pipeline --> CV --> LGBM
+        LGBM --> XAI_SHAP
+        Pipeline --> XAI_Heuristics
     end
 
-    subgraph Serving["Application & Presentation Layer"]
-        F1 & H1 & H2 --> I1["FastAPI Backend\n(POST /predict, GET /explain)"]
-        I1 --> J1["Streamlit Dashboard\n(Interactive Plotly Cones)"]
+    subgraph ServingLayer ["5. Serving & UI Interface"]
+        FastAPI["FastAPI REST Server (:8000)\napi/main.py"]
+        ReactClient["React 19 + TypeScript Terminal (:5173 / :3000)\nfrontend-react/ (TradingView Lightweight Charts)"]
+        LGBM --> FastAPI
+        XAI_SHAP --> FastAPI
+        XAI_Heuristics --> FastAPI
+        FastAPI --> ReactClient
     end
 ```
 
 ---
 
-## 2. Core Architectural Pillars
+## 3. Component Architecture & Directory Decoupling
 
-### Pillar 1: Pure Historical Equities Ingestion
-- **Direct CSE Portal Client (`src/ingestion/cse_scraper.py`)**: Queries `https://www.cse.lk/api/companyInfoSummery` to resolve security symbol IDs and fetches daily candlestick bars from `/companyChartDataByStock` with automatic connection pooling and exponential backoff retry.
-- **Storage Abstraction & Standardization (`src/ingestion/data_loader.py`)**: Loads multi-year stock archives (`data/raw/yearly/`) and individual equity CSVs (`data/raw/cse/`), standardizes them to `['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']`, and caches processed matrices into high-performance Parquet format (`data/processed/`).
+The repository is structured strictly around clean separation of concerns:
 
-### Pillar 2: Technical Feature Engineering (Strictly OHLCV)
-All predictive signals are strictly computed from historical equities dynamics, avoiding unreliable external data:
-1. **Autoregressive Returns**: 1-day logarithmic returns, high-low percentage range, and intraday displacement.
-2. **Trend & Moving Averages**: Exponential Moving Averages (10, 20, 50, 200) and normalized price distances ($\text{dist\_ema}$).
-3. **Momentum Oscillators**: Wilder's RSI (14) and MACD (12, 26, 9) with momentum histogram.
-4. **Volatility Estimators**: Annualized Parkinson High-Low volatility ($N=20$) and Bollinger Bands (%B and Band Width).
-5. **Autoregressive Lags**: Multi-step return lags ($t-1, t-2, t-3, t-5, t-10$).
-
-### Pillar 3: Purged & Embargoed Walk-Forward Cross-Validation
-Because multi-step returns ($y_t = \ln(P_{t+30}/P_t)$) create overlapping dependency windows, standard $K$-Fold cross-validation leaks future information into earlier folds.
-- **Purging**: Training points within 30 trading days prior to the evaluation window are strictly removed.
-- **Embargoing**: An explicit 30-trading-day buffer separates training and test splits to neutralize serial autocorrelation spillover.
-
-### Pillar 4: Multi-Quantile Uncertainty Estimation
-Emerging market equities exhibit non-Gaussian returns with fat tails. Rather than predicting an overconfident single number, the platform trains three distinct LightGBM regressors minimizing the **Pinball Loss**:
-$$\mathcal{L}_\alpha(y, \hat{y}) = \max(\alpha(y - \hat{y}), (\alpha - 1)(y - \hat{y}))$$
-for quantiles $\alpha \in \{0.10, 0.50, 0.90\}$, constructing an 80% confidence forecast cone $[P_{10}, P_{90}]$ around the median path $P_{50}$.
-
-### Pillar 5: Dual-Layer Explainability (XAI)
-1. **Mathematical Attribution (TreeSHAP)**:
-   Exact Shapley values decomposing marginal price and volume indicator impacts in return space.
-2. **Retail Investor Technical Badges**:
-   Rule engine translating technical indicators (RSI overbought/oversold, 20-day SMA trend, MACD momentum, Bollinger Band touch, and Parkinson volatility) into color-coded **"Supporting"** vs. **"Rejecting"** badges.
+```text
+cse-market-intelligence/
+├── configs/
+│   ├── model_config.yaml           # Quantile thresholds, lag windows & hyperparameters
+│   └── tickers.yaml                # Universe of 26 target CSE blue-chip equities
+├── data/
+│   ├── raw/                        # Primary raw archives and SQL seed backups
+│   └── processed/                  # Partitioned Parquet datasets (26 equities + ASPI)
+├── src/
+│   ├── ingestion/                  # CSE API scrapers, parsers & daily sync services
+│   ├── features/                   # Technical indicator math & ASPI benchmark relative returns
+│   ├── modeling/                   # Purged walk-forward CV, multi-quantile LightGBM & baselines
+│   ├── explainability/             # TreeSHAP service & institutional heuristic validation engine
+│   └── database/                   # SQLAlchemy ORM models, session pooling & migration tooling
+├── api/
+│   ├── main.py                     # FastAPI application factory, CORS & health probes
+│   └── routes/                     # Modular API routers (/stocks, /predict, /benchmarks)
+├── frontend-react/                 # React 19 + TypeScript + Tailwind + TradingView terminal
+├── models/                         # Serialized production LightGBM model weights (lgb_p*.txt)
+├── reports/                        # Model benchmark comparisons & CV tournament summaries
+├── scripts/                        # Production orchestration, historical backfill & training CLI
+└── tests/                          # 29-test automated pytest suite
+```
 
 ---
 
-## 3. Serving & Containerization
+## 4. Key Architectural Trade-Offs & Decisions
 
-- **FastAPI Backend (`api/main.py`)**:
-  - `POST /api/v1/predict/{symbol}`: Returns 30-day forecast cone ($P_{10}, P_{50}, P_{90}$) and daily trajectory points.
-  - `GET /api/v1/explain/{symbol}`: Returns TreeSHAP feature drivers and rule-based heuristic badges.
-  - `GET /health`: Liveness and readiness health probe.
-- **Interactive Dashboard (`frontend/app.py`)**:
-  - Streamlit dashboard with interactive Plotly forecast cones, TreeSHAP impact bars, and heuristic badge cards.
-- **Docker Compose (`docker-compose.yml`)**:
-  - Unified orchestration launching the FastAPI engine on port `8000` and the Streamlit dashboard on port `8501`.
+| Decision | Selected Option | Considered Alternative | Rationale |
+| :--- | :--- | :--- | :--- |
+| **Target Variable** | 30-Day Forward Log Return $y_t = \ln(P_{t+30}/P_t)$ | Nominal Future Price $P_{t+30}$ | Nominal prices exhibit non-stationary random walk behavior, resulting in models that learn identity persistence ($P_{t+30} \approx P_t$) with zero economic value. |
+| **Validation Scheme** | Purged Walk-Forward CV with 30-day embargo | Standard $K$-Fold or TimeSeriesSplit | Standard CV leaks future forward returns across overlapping 30-day windows. The embargo ensures complete independence between training and test sets. |
+| **Model Class** | Multi-Quantile LightGBM ($P_{10}, P_{50}, P_{90}$) | Deep Learning (LSTM/Transformer) | Frontier equity series contain tabular features with limited daily sample size (~1,000–2,000 rows). Tree-based quantile regression converges robustly without overfitting. |
+| **Serving Storage** | Columnar Apache Parquet | Direct SQL query per request | Parquet provides sub-millisecond columnar zero-copy scans, allowing instant forecast inference even when database connections sleep or experience latency. |
+| **Database** | PostgreSQL with Composite Primary Keys | NoSQL (MongoDB / DynamoDB) | Financial market series require strict data integrity guarantees: composite key `(symbol, date)` prevents duplicate bars, while indexed point-in-time queries remain fast. |
+
+---
+
+## 5. Security & Production Deployment Profile
+
+1. **Zero Secret Leakage**:
+   - Environment variables are isolated via `.env.example`.
+   - Production connection strings are passed exclusively through cloud secret managers (Render Web Service Environment and GitHub Actions Secrets).
+2. **Containerization**:
+   - `Dockerfile`: Multi-stage, low-footprint container using `python:3.11-slim` with `libgomp1` OpenMP multiprocessing support.
+   - Dynamic port binding via `${PORT:-8000}` compatible with serverless containers (Render, Google Cloud Run, AWS App Runner).
+3. **Resilient Frontend Offline / Cold-Start Support**:
+   - High-fidelity pre-computed snapshots for all 26 equities are bundled in `frontend-react/src/data/fallbackData.ts`. If cloud backend containers undergo idle sleep, the user experiences zero broken screens or failed promises.

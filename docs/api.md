@@ -1,103 +1,225 @@
-# REST API Specification
+# REST API & Serving Specification
 
-The Colombo Stock Exchange (CSE) Market Intelligence Platform serves its REST endpoints via FastAPI. All endpoints are prefixed under the `/api/v1` namespace.
+## 1. Overview & Architecture
 
----
+The serving layer of the platform is built on **FastAPI** (`api/main.py`), utilizing asynchronous I/O, Pydantic v2 data validation schemas, automated OpenAPI documentation (`/docs`), and CORS middleware supporting cross-origin clients (React Vite on Vercel or local terminal).
 
-## Endpoint Index
-
-### 1. Health Router
-Endpoints checking deployment, service, and database connectivity.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/health`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/health.py) | Verifies backend connectivity and returns service status |
-
-### 2. Stocks Ingestion & Status Router
-Endpoints managing Colombo Stock Exchange data ingestion and freshness.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/stocks/{symbol}`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Retrieve stored OHLCV price history for a symbol |
-| `GET`  | [`/api/v1/stocks/{symbol}/status`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Retrieve historical date ranges and record freshness details |
-| `POST` | [`/api/v1/stocks/{symbol}/ingest`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Run historical ingestion (last 2 years) for a specific symbol |
-| `POST` | [`/api/v1/stocks/ingest/all`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Trigger full ingestion for all symbols tracked in the platform |
-| `POST` | [`/api/v1/stocks/refresh`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Append missing data (incremental daily refresh) for tracked symbols |
-| `GET`  | [`/api/v1/stocks/data-status`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/stocks.py) | Check database row counts and csv storage dates for all symbols |
-
-### 3. Data Analytics Router
-Endpoints serving technical indicator analyses, Granger causality, and pricing signals.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/analytics/stocks/{symbol}`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Get technical indicators (RSI, MACD, SMAs, Bollinger Bands) |
-| `GET`  | [`/api/v1/analytics/stocks/{symbol}/integrated`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Get unified historical data merged with CBSL & Trends indicators |
-| `GET`  | [`/api/v1/analytics/{symbol}/correlation`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Get correlation coefficients between stock returns and macro variables |
-| `GET`  | [`/api/v1/analytics/{symbol}/causality`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Get Granger causality p-values for macro variables driving prices |
-| `GET`  | [`/api/v1/analytics/{symbol}/lag`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Fetch cross-correlation values at lag shifts for lead-lag dynamics |
-| `GET`  | [`/api/v1/analytics/{symbol}/technical-summary`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Generate plain-language tendency descriptions from indicator scores |
-| `GET`  | [`/api/v1/analytics/stocks/{symbol}/backtest`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/analytics.py) | Backtest a rule-based indicator strategy against historical returns |
-
-### 4. Forecasting & ML Router
-Endpoints running prediction algorithms (Baseline, SARIMAX, XGBoost) and cache clearance.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/forecast/{symbol}`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/forecasting.py) | Fetch 7-day ahead price forecasts, confidence intervals, and metrics |
-| `POST` | [`/api/v1/forecast/cache/clear`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/forecasting.py) | Evict cached predictions to trigger full retraining of ML models |
-
-### 5. Prediction Analysis & Explainability Router
-Endpoints providing comparative model evaluation and AI explainability (SHAP).
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/predictions/{symbol}`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/predictions.py) | Multi-model predictions, best model selection, and metrics |
-| `GET`  | [`/api/v1/predictions/{symbol}/compare`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/predictions.py) | Compare RMSE, MAE, MAPE, and R² metrics side-by-side |
-| `GET`  | [`/api/v1/predictions/{symbol}/history`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/predictions.py) | Retrieve historical stock prices optimized for chart rendering overlays |
-| `GET`  | [`/api/v1/predictions/{symbol}/explanation`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/explanations.py) | Retrieve SHAP feature impacts or model parameter coefficients |
-
-### 6. System Administration & Pipeline Router
-Endpoints auditing task execution logs and running update cycles.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/system/status`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/system.py) | Audit database counts and last pipeline update status |
-| `GET`  | [`/api/v1/system/pipelines/logs`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/system.py) | Retrieve execution log logs from database audits |
-| `POST` | [`/api/v1/system/pipelines/run`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/system.py) | Trigger the main update pipeline in a background task executor |
-
-### 7. Core Dashboard Router
-Endpoints serving aggregate widgets for the frontend dashboard main page.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | [`/api/v1/dashboard`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/api/v1/dashboard.py) | Fetch top stocks, economic summaries, ASPI benchmarks, and pipeline status |
+- **Base URL (Local)**: `http://localhost:8000`
+- **Base URL (Cloud)**: `https://cse-market-intelligence-api.onrender.com`
+- **Interactive Swagger UI**: `/docs`
+- **OpenAPI Schema**: `/openapi.json`
 
 ---
 
-## Example Responses
+## 2. Global Endpoints
 
-### Health Verification
-`GET /api/v1/health`
+### 2.1 Health & Readiness Probe
+`GET /health`
+
+Returns service health, system uptime, count of loaded LightGBM models, and count of active equity datasets.
+
+**Response `200 OK`**:
 ```json
 {
-  "status": "healthy"
+  "status": "healthy",
+  "service": "cse-market-intelligence-api",
+  "version": "2.0.0",
+  "uptime_seconds": 1420.5,
+  "models_count": 26,
+  "available_models": [
+    "AAIC_N0000", "ACL_N0000", "AHUN_N0000", "CARG_N0000", "COMB_N0000",
+    "DIAL_N0000", "DIST_N0000", "EXPO_N0000", "HAYL_N0000", "HEMA_N0000",
+    "HNB_N0000", "JKH_N0000", "KGAL_N0000", "LIOC_N0000", "LOLC_N0000",
+    "LWL_N0000", "MADU_N0000", "NDB_N0000", "ODEL_N0000", "OSEA_N0000",
+    "RICH_N0000", "SAMP_N0000", "SEYB_N0000", "SLTL_N0000", "TKYO_N0000", "UML_N0000"
+  ],
+  "available_equities_count": 26
 }
 ```
 
-### Integrated Macro Dataset
-`GET /api/v1/analytics/stocks/COMB/integrated`
+---
+
+## 3. Quantitative Financial Endpoints (`/api/v1`)
+
+### 3.1 List Active Equities
+`GET /api/v1/stocks`
+
+Scans the high-speed Parquet storage layer and returns all 26 tracked CSE blue-chip equities with their latest market close, date, volume, sector, and company metadata.
+
+**Response `200 OK`**:
 ```json
 {
-  "symbol": "COMB",
+  "status": "success",
+  "count": 26,
   "data": [
     {
-      "date": "2026-07-20",
-      "close": 94.8,
-      "Inflation_CCPI": 4.8,
-      "ExchangeRate_USD_LKR": 298.5,
-      "rsi": 52.4,
-      "trend_score": 75.0
+      "symbol": "JKH_N0000",
+      "code": "JKH",
+      "name": "John Keells Holdings PLC",
+      "sector": "Diversified Financials / Conglomerates",
+      "latest_close": 17.80,
+      "latest_date": "2026-10-27",
+      "latest_volume": 425100
     }
   ]
 }
 ```
+
+---
+
+### 3.2 Multi-Quantile Forecast Generation (POST)
+`POST /api/v1/predict`
+
+Executes end-to-end inference for a target CSE equity: generates the 30-day forecast cone ($P_{10}, P_{50}, P_{90}$), computes exact TreeSHAP attributions, checks technical heuristic alignment cards, and returns recent historical bars for candlestick charting.
+
+**Request Payload**:
+```json
+{
+  "symbol": "JKH_N0000",
+  "horizon_days": 30,
+  "explain": true
+}
+```
+
+**Response `200 OK`**:
+```json
+{
+  "status": "success",
+  "data": {
+    "symbol": "JKH_N0000",
+    "current_price": 17.80,
+    "as_of_date": "2026-10-27",
+    "horizon_days": 30,
+    "target_returns": {
+      "p10_log_return": -0.0537,
+      "p50_log_return": 0.0188,
+      "p90_log_return": 0.0334,
+      "expected_pct_change": 1.90
+    },
+    "target_prices": {
+      "price_p10": 16.87,
+      "price_p50": 18.14,
+      "price_p90": 18.40
+    },
+    "cone_trajectory": [
+      {
+        "step": 1,
+        "date": "2026-10-28",
+        "price_p10": 17.77,
+        "price_p50": 17.81,
+        "price_p90": 17.82
+      },
+      {
+        "step": 30,
+        "date": "2026-12-08",
+        "price_p10": 16.87,
+        "price_p50": 18.14,
+        "price_p90": 18.40
+      }
+    ],
+    "shap_explanation": {
+      "base_value": 0.0092,
+      "predicted_return": 0.0188,
+      "top_positive_drivers": [
+        {
+          "feature": "parkinson_vol_20d",
+          "value": 0.0184,
+          "shap_impact": 0.0052,
+          "shap_impact_pct": 0.52,
+          "description": "20-day Parkinson Volatility",
+          "direction": "positive"
+        }
+      ],
+      "top_negative_drivers": [
+        {
+          "feature": "rsi_14",
+          "value": 68.4,
+          "shap_impact": -0.0028,
+          "shap_impact_pct": -0.28,
+          "description": "14-day Relative Strength Index",
+          "direction": "negative"
+        }
+      ]
+    },
+    "indicator_heuristics": [
+      {
+        "indicator": "RSI (14-Day)",
+        "value": "68.4 (Neutral-High)",
+        "status": "Supporting",
+        "signal": "Bullish",
+        "explanation": "RSI maintains positive momentum without exceeding overbought 70."
+      }
+    ],
+    "historical_series": [
+      {
+        "date": "2026-10-27",
+        "open": 17.60,
+        "high": 17.90,
+        "low": 17.50,
+        "close": 17.80,
+        "volume": 425100
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3.3 Multi-Quantile Forecast Generation (GET)
+`GET /api/v1/predict/{symbol}?horizon_days=30&explain=true`
+
+Convenience GET endpoint providing identical output to the POST method. Ideal for browser-based inspection and lightweight client integrations.
+
+---
+
+### 3.4 Purged Cross-Validation Benchmark Report
+`GET /api/v1/benchmarks`
+
+Retrieves the empirical walk-forward benchmark tournament results across all 26 equities from `reports/cv_benchmark_summary.csv`.
+
+**Response `200 OK`**:
+```json
+{
+  "status": "success",
+  "count": 26,
+  "data": [
+    {
+      "symbol": "JKH_N0000",
+      "n_folds": 5,
+      "total_test_samples": 300,
+      "lgb_dir_acc": 61.2,
+      "naive_dir_acc": 50.0,
+      "prophet_dir_acc": 54.3,
+      "dir_acc_edge_vs_naive": 11.2,
+      "lgb_rmse": 0.0742,
+      "naive_rmse": 0.0988,
+      "prophet_rmse": 0.0912,
+      "lgb_mae": 0.0551,
+      "naive_mae": 0.0764,
+      "prophet_mae": 0.0701,
+      "lgb_coverage_80": 81.3
+    }
+  ]
+}
+```
+
+---
+
+### 3.5 Standalone TreeSHAP Attribution
+`GET /api/v1/explain/{symbol}?top_k=5`
+
+Returns standalone Layer 1 Shapley value attributions for the given equity.
+
+---
+
+## 4. Error Handling & Status Codes
+
+All errors return standard JSON payloads with explicit diagnostic information:
+
+| HTTP Status | Description | Example Condition |
+| :--- | :--- | :--- |
+| `200 OK` | Request succeeded | Forecast generated or records retrieved. |
+| `404 Not Found` | Asset or model not found | Requesting unknown ticker symbol `XYZ_N0000`. |
+| `422 Unprocessable Entity`| Schema validation error | Passing `horizon_days=200` (must be between 5 and 90). |
+| `500 Internal Error` | Server computation error | Feature pipeline failure or missing storage artifacts. |

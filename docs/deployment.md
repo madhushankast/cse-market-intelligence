@@ -1,148 +1,108 @@
-# Deployment Guide
+# Production Deployment & MLOps Operations Guide
 
-The **CSE Market Intelligence Platform** is architected to support cost-effective deployment. Since this is an academic research platform rather than an enterprise-scale commercial trading desk, it is designed to run entirely on **free-tier cloud services** with negligible maintenance costs.
+## 1. Cloud Infrastructure Overview (100% Free Tier Architecture)
 
----
+The platform is designed to run indefinitely on resilient, zero-cost cloud tiers:
 
-## Recommended Deployment Topology
-
-```text
-                             Internet
-                                 │
-                  ┌──────────────┴──────────────┐
-                  │                             │
-                  ▼                             ▼
-           React + Vite UI               FastAPI Backend
-          Cloudflare Pages            Render / Railway / Fly.io
-                  │                             │
-                  └──────────────┬──────────────┘
-                                 │ REST API
-                                 ▼
-                         SQLite Database
-                          (cse.db Storage)
-                                 │
-                                 ▼
-                     Scheduled Ingestion / Training
-                            (GitHub Actions)
-```
-
----
-
-## 1. Hosting Services Matrix
-
-| Component | Target Service | Tier | Description |
+| Tier | Component | Cloud Provider | Free Tier Specification |
 | :--- | :--- | :--- | :--- |
-| **Frontend UI** | **Cloudflare Pages** | Free | Serves React static build files over high-speed CDNs. |
-| **Backend REST API** | **Render / Railway** | Free | Hosts containerized FastAPI service. |
-| **Database Engine** | **SQLite (`cse.db`)** | Free | Local serverless relational DB (can migrate to Cloud SQL / PostgreSQL). |
-| **Data Update Pipeline**| **GitHub Actions** | Free | Triggers daily updates and runs retraining tasks off-site. |
-| **Source Repository** | **GitHub** | Free | Code version control and automated CI/CD triggers. |
+| **Frontend UI** | React 19 + TradingView Terminal | **Vercel** | Global CDN Edge, unlimited deployments & custom domains. |
+| **Backend API** | FastAPI + LightGBM MLOps Engine | **Render** | 512 MB RAM Docker Web Service with automatic SSL. |
+| **Database** | PostgreSQL 15 | **Supabase** | 500 MB relational database with Connection Pooler. |
+| **Automation** | Daily Market Close Retraining Cron | **GitHub Actions**| 2,000 minutes/month free Ubuntu runners. |
 
 ---
 
-## 2. Frontend Deployment (Cloudflare Pages)
+## 2. Deploying the Backend API (Render)
 
-The React web application is compiled into static HTML/JS/CSS assets. Cloudflare Pages integrates directly with the GitHub repository:
-
-*   **Build Command**: `npm run build`
-*   **Publish Directory**: `dist`
-*   **Configuration**:
-    *   Set up a redirect rule in the `_redirects` file to route fallback calls to `index.html` to support React Router single-page navigation:
-        ```text
-        /* /index.html 200
-        ```
-    *   Set the frontend environment variable `VITE_API_BASE_URL` to point to the Render backend domain (e.g. `https://cse-api.onrender.com`).
-
----
-
-## 3. Backend Deployment (Render Web Service)
-
-FastAPI is deployed as a Docker service on Render. The root directory contains the `Dockerfile` specifying execution details.
-
-*   **Dockerfile Configuration**:
-    ```dockerfile
-    FROM python:3.11-slim
-    ENV PYTHONUNBUFFERED=1
-    WORKDIR /workspace
-    COPY requirements.txt .
-    RUN pip install --no-cache-dir -r requirements.txt
-    COPY . .
-    EXPOSE 8080
-    CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-    ```
-*   **Free-Tier Inactivity Caveat**: On Render's free tier, the backend web service spins down after 15 minutes of inactivity. When a new request arrives, it may take 30–60 seconds to boot up.
-*   **Environment Variables**:
-    *   `ENV=production`
-    *   `DATABASE_URL=sqlite:///cse.db`
-    *   `CORS_ORIGINS=["https://your-frontend.pages.dev"]`
+1. **Repository Settings**: Push code to GitHub.
+2. In **[dashboard.render.com](https://dashboard.render.com)**:
+   - Click **New +** $\to$ **Web Service**.
+   - Select your `cse-market-intelligence` repository.
+   - **Runtime**: `Docker`
+   - **Region**: `Frankfurt` (matches Supabase EU Central)
+   - **Instance Type**: `Free`
+3. **Environment Variables**:
+   - `DATABASE_URL`: Your Supabase connection string.
+   - `PORT`: `8000`
+4. Deploy the service. Once built, note your public URL:
+   `https://<your-service-name>.onrender.com`
 
 ---
 
-## 4. Database & File Persistence
+## 3. Deploying the React Terminal (Vercel)
 
-For read-heavy research datasets, SQLite (`cse.db`) works perfectly. To handle SQLite's transient disk behavior on free container instances, we leverage an **offline/online decoupling strategy**:
+1. In **[vercel.com](https://vercel.com)**:
+   - Click **Add New...** $\to$ **Project**.
+   - Select the repository.
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: `frontend-react`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+2. **Environment Variables**:
+   - `VITE_API_URL`: Your Render backend URL (e.g. `https://cse-market-intelligence-api.onrender.com`).
+3. Deploy. The platform is configured with `vercel.json` for single-page application routing.
 
-```text
-  ┌──────────────────────────────────────────────────────────────┐
-  │ 1. OFFLINE PIPELINE (Scheduled Daily via GitHub Actions)     │
-  │    - Fetches live stock data from CSE API.                   │
-  │    - Preprocesses indicators & retrains XGBoost/SARIMAX.     │
-  │    - Commits/uploads the updated cse.db and model artifacts.  │
-  └──────────────────────────────┬───────────────────────────────┘
-                                 │
-                                 ▼
-  ┌──────────────────────────────────────────────────────────────┐
-  │ 2. ONLINE API SERVICE (FastAPI hosted on Render Web Service)  │
-  │    - Downloads the committed cse.db on service startup.      │
-  │    - Reads pre-computed forecasts and attributions directly. │
-  │    - Exposes instantaneous API responses to the UI dashboard.│
-  └──────────────────────────────────────────────────────────────┘
+---
+
+## 4. Automated Daily Post-Market MLOps Pipeline
+
+The automated workflow in `.github/workflows/daily_schedule.yml` runs every weekday at **15:00 Colombo time (09:30 UTC)**:
+
+```mermaid
+sequenceDiagram
+    participant GitHub as GitHub Actions Runner
+    participant CSE as Colombo Stock Exchange API
+    participant DB as Supabase PostgreSQL
+    participant Model as LightGBM Engine
+    participant Render as Render API Webhook
+
+    GitHub->>CSE: Fetch today's closing prices (ASPI + 26 Equities)
+    CSE-->>GitHub: Return raw trade bars
+    GitHub->>DB: Idempotent upsert into stock_prices & aspi_index
+    GitHub->>DB: Query expanding history (>= 250 samples)
+    GitHub->>Model: Compute technical features & fit P10, P50, P90 LightGBM
+    GitHub->>Model: Generate TreeSHAP attributions & heuristic cards
+    GitHub->>DB: Persist prediction records into forecast_predictions
+    GitHub->>DB: Log runtime metrics into pipeline_runs
+    GitHub->>Render: (Optional) POST RENDER_DEPLOY_HOOK to refresh container
 ```
 
-This decoupled approach ensures:
-*   **Fast API Response**: Eliminates long-running ML training blocks on API requests.
-*   **Zero Compute Overhead**: Model fitting is offloaded to GitHub Actions runner agents.
+---
+
+## 5. Local Docker Compose Multi-Service Deployment
+
+To spin up the entire isolated stack locally (Postgres + FastAPI + React UI):
+
+```bash
+# Build and run containers
+docker compose up --build -d
+
+# View status
+docker compose ps
+
+# Tail logs
+docker compose logs -f api
+```
+
+- **React Terminal**: `http://localhost:3000`
+- **FastAPI Backend**: `http://localhost:8000`
+- **Interactive Swagger Docs**: `http://localhost:8000/docs`
+- **Postgres Database**: `localhost:5432`
 
 ---
 
-## 5. Scheduled Data Collection & CI/CD Pipeline
+## 6. MLOps Monitoring & Model Diagnostics
 
-A GitHub Actions workflow script (`.github/workflows/daily_ingest.yml`) runs on a cron schedule to perform incremental updates:
-
-```yaml
-name: Daily CSE Ingestion and Model Training
-
-on:
-  schedule:
-    - cron: '0 13 * * 1-5' # Runs at 18:30 IST (13:00 UTC) every weekday on market close
-  workflow_dispatch:      # Allows manual trigger
-
-jobs:
-  run-pipeline:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: pip install -r backend/requirements.txt
-
-      - name: Execute Daily Pipeline Update
-        run: |
-          cd backend
-          python -m app.pipelines.daily_pipeline
-
-      - name: Commit Updated Database
-        run: |
-          git config --global user.name "Github Action Bott"
-          git config --global user.email "action@github.com"
-          git add backend/cse.db backend/data/
-          git commit -m "auto: daily stock ingestion & model updates" || exit 0
-          git push
-```
+1. **Quantile Calibration Tracking**:
+   Models are evaluated via Pinball Loss and 80% coverage ($P_{10} \le y \le P_{90}$). Coverage is logged per fold and must remain within $[75\%, 85\%]$.
+2. **Data Drift Detection**:
+   `scripts/daily_market_sync.py` checks for price anomalies exceeding circuit-breaker thresholds ($\pm 25\%$ daily jump) before committing to storage.
+3. **Execution Telemetry**:
+   Each run records total duration, symbol count, and errors in the `pipeline_runs` table:
+   ```sql
+   SELECT execution_date, pipeline_type, status, duration_seconds, error_count 
+   FROM pipeline_runs 
+   ORDER BY created_at DESC 
+   LIMIT 10;
+   ```

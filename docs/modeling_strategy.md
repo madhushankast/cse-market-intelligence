@@ -1,108 +1,107 @@
-# Modeling Strategy & Evaluation Framework (Strictly Historical OHLCV)
+# Quantitative Modeling Strategy & Validation Rigor
 
-This document details the quantitative foundation, target formulation, technical indicator mechanics, and validation protocols powering the **Colombo Stock Exchange (CSE) Market Intelligence Platform**.
+## 1. The Target Formulation Problem
 
----
+### The Nominal Price Anti-Pattern
+In naive financial machine learning implementations, practitioners frequently formulate forecasting as predicting the future raw price:
+$$\hat{P}_{t+h} = f(P_t, P_{t-1}, \dots)$$
+Because raw asset prices are non-stationary $I(1)$ processes (unit root stochastic trends), standard loss functions like Mean Squared Error (MSE) heavily penalize any deviation from the latest known price. Consequently, unconstrained gradient boosters or neural networks learn a trivial identity persistence model:
+$$\hat{P}_{t+h} \approx P_t$$
+While such models achieve deceptive evaluation metrics ($R^2 > 0.98$, directional accuracy ~50%), they possess **zero forecasting alpha** and lag actual turning points by exactly $h$ periods.
 
-## 1. Target Formulation: Avoiding Nominal Price Traps
+### Stationarity via Forward Cumulative Log Returns
+To enforce covariance stationarity and force the estimator to learn true cyclical and momentum dynamics, our platform defines the target variable as the **30-trading-day ahead cumulative log return**:
 
-A common failure mode in financial machine learning is training models to forecast nominal prices ($y_t = P_{t+h}$). This approach suffers from critical statistical defects:
+$$y_t = \ln\left(\frac{P_{t+30}}{P_t}\right)$$
 
-1. **Unit Roots & Non-Stationarity ($I(1)$)**:
-   Asset prices follow stochastic non-stationary trends. Models trained on raw price levels degenerate into trivial lag followers:
-   $$\hat{P}_{t+1} \approx P_t$$
-   This produces artificial $R^2 > 0.95$ metrics while offering zero predictive capability.
-2. **Scale Invariance Across Equities**:
-   CSE equities trade at widely different nominal prices (e.g., JKH at ~LKR 160 vs. CARG at ~LKR 380 vs. DIAL at ~LKR 11). Standardizing to continuous returns eliminates scale sensitivity.
-3. **Compound Return Additivity**:
-   Continuous logarithmic returns are strictly additive across time horizons:
-   $$r_{t, t+k} = \sum_{i=1}^k r_{t+i-1, t+i}$$
-
-### Mathematical Definition of the Target
-The supervised target is formulated as the **30-trading-day ahead cumulative forward log return**:
-$$y_t = \ln\left(\frac{P_{t+30}}{P_t}\right) = \ln(P_{t+30}) - \ln(P_t)$$
-
-At inference, given current price $P_t$ and predicted quantile return $\hat{y}_{t+h, q}$, future nominal prices are reconstructed:
-$$P_{t+h, q} = P_t \cdot \exp\left(\hat{y}_{t+30, q} \cdot \frac{h}{30}\right) \quad \text{for } h \in [1, 30]$$
+Properties of this target formulation:
+1. **Time-Additive**: Multi-period log returns can be aggregated linearly across intermediate time horizons.
+2. **Scale Invariant**: Normalized across equities trading at LKR 10 vs. LKR 1,500.
+3. **Stationary**: Statistical properties (mean, variance, auto-covariance) do not drift systematically with nominal index inflation.
 
 ---
 
-## 2. Technical Feature Engineering (Strictly OHLCV)
+## 2. Multi-Quantile Loss Optimization
 
-All feature inputs are derived exclusively from historical price action and trading volume:
+Rather than estimating the conditional expectation $E[y \mid X]$ (which discards distributional uncertainty), the platform optimizes asymmetric **Pinball Loss** (Quantile Regression) across three critical investment quantiles:
 
-### 2.1 Wilder's Relative Strength Index (RSI)
-Measures the velocity and magnitude of directional price movements:
-$$U_t = \max(P_t - P_{t-1}, 0), \quad D_t = \max(P_{t-1} - P_t, 0)$$
-$$\text{RS}_t = \frac{\text{EMA}(U, 14)}{\text{EMA}(D, 14)}, \quad \text{RSI}_t = 100 - \frac{100}{1 + \text{RS}_t}$$
+$$\mathcal{L}_q(y, \hat{y}) = \max\Big(q(y - \hat{y}), (1 - q)(\hat{y} - y)\Big)$$
 
-### 2.2 Moving Average Convergence Divergence (MACD)
-Captures shifting exponential trend momentum:
-$$\text{MACD}_t = \text{EMA}_{12}(P_t) - \text{EMA}_{26}(P_t)$$
-$$\text{Signal}_t = \text{EMA}_9(\text{MACD}_t), \quad \text{Hist}_t = \text{MACD}_t - \text{Signal}_t$$
+Where $q \in \{0.10, 0.50, 0.90\}$:
+- **$P_{10}$ (Downside Risk / Value-at-Risk Floor)**: $q = 0.10$. Penalizes underestimating extreme drawdowns 9 times more heavily than overestimating returns. Represents the 90% confidence downside risk boundary.
+- **$P_{50}$ (Median Trajectory Expectation)**: $q = 0.50$. Equivalent to Mean Absolute Error (MAE). Yields the robust median return trajectory less susceptible to outlier spikes than MSE.
+- **$P_{90}$ (Bullish Ceiling / Upper Resistance)**: $q = 0.90$. Represents the 90th percentile bullish expansion envelope.
 
-### 2.3 Parkinson High-Low Volatility Estimator
-A high-efficiency extreme-value volatility estimator that leverages intraday High and Low extremes rather than close-to-close prices:
-$$\sigma_P = \sqrt{\frac{252}{4 \ln(2) \cdot N} \sum_{i=1}^N \left(\ln\frac{\text{High}_i}{\text{Low}_i}\right)^2}$$
-Parkinson volatility is approximately 5 times more efficient than traditional close-to-close volatility estimators.
+### Trajectory Mapping
+From the predicted forward log return quantiles $\hat{r}_{10}, \hat{r}_{50}, \hat{r}_{90}$, the terminal maps price coordinates across the 30-day horizon:
 
-### 2.4 Bollinger Bands (%B)
-Measures price position relative to rolling standard deviation bands:
-$$\text{Upper} = \text{SMA}_{20} + 2\sigma_{20}, \quad \text{Lower} = \text{SMA}_{20} - 2\sigma_{20}$$
-$$\%B = \frac{\text{Close} - \text{Lower}}{\text{Upper} - \text{Lower}}$$
+$$P_{t+h, q} = P_t \times \exp\left(\hat{r}_q \times \frac{h}{30}\right), \quad \forall h \in [1, 30]$$
+
+Monotonicity is strictly enforced in post-processing: $\hat{r}_{10} \le \hat{r}_{50} \le \hat{r}_{90}$.
 
 ---
 
 ## 3. Purged & Embargoed Walk-Forward Cross-Validation
 
-Standard $K$-Fold cross-validation is fundamentally invalid in time-series forecasting. Two leakage channels must be mitigated:
+Standard $K$-Fold cross-validation destroys temporal sequence and causes severe lookahead leakage. Furthermore, because our target spans 30 forward trading days, any training bar within 30 days of the test window contains labels that overlap with the test set.
+
+Our custom `PurgedWalkForwardCV` (`src/modeling/train_lightgbm.py`) enforces strict leakage elimination across 5 expanding splits:
 
 ```text
-Time Horizon: ────────────────────────────────────────────────────────►
-Fold k:       [======== Train Window ========] [ Embargo Gap ] [== Test Window ==]
-                                               <-- 30 Days -->
+Historical Timeline ────────────────────────────────────────────────────────►
+Fold 1: [██████ Train Window ██████] [Purge: 30d] [Test: 60d] [Embargo: 30d]
+Fold 2: [██████████ Train Window ██████████] [Purge: 30d] [Test: 60d] [Embargo: 30d]
+Fold 3: [██████████████ Train Window ██████████████] [Purge: 30d] [Test: 60d] ...
 ```
 
-1. **Forward Label Overlap (Purging)**:
-   Because target $y_t$ incorporates price data up to $t+30$, training observations at $t \in [T_{\text{test}} - 30, T_{\text{test}} - 1]$ utilize forward price data that spills into the test set. All training rows within 30 days prior to the test set are strictly purged.
-2. **Serial Autocorrelation (Embargoing)**:
-   Volatility and momentum clustering create memory spillover. An embargo buffer of $E = 30$ trading days is enforced between the end of the training window and the evaluation period.
+### Protocol Specifications
+1. **Minimum Training Samples**: 250 trading days (~1 calendar year).
+2. **Out-of-Sample Test Window**: 60 trading days (~1 quarter).
+3. **Purge Window (30 days)**: Strips training records immediately preceding the test split whose forward 30-day horizon overlaps with test timestamps.
+4. **Embargo Gap (30 days)**: Imposes a 30-trading-day buffer following test splits before training data can be expanded, eliminating serial correlation spillover.
 
 ---
 
-## 4. Asymmetric Quantile Loss (Pinball Loss)
+## 4. Benchmark Tournament & Empirical Validation
 
-Rather than outputting a single point estimate, the platform models return uncertainty using **Multi-Quantile LightGBM** for quantiles $\alpha \in \{0.10, 0.50, 0.90\}$.
+Every model is benchmarked against two rigorous baselines:
+1. **Level 0 Baseline: Naive Random Walk with Zero Return Drift**:
+   $$\hat{y}_{\text{naive}} = 0 \implies \hat{P}_{t+30} = P_t$$
+2. **Level 1 Baseline: Facebook Prophet Time-Series Decomposition**:
+   Decomposes price history into piecewise linear trend, weekly seasonality, and yearly seasonality.
 
-The model minimizes the asymmetric **Pinball Loss**:
-$$\mathcal{L}_\alpha(y, \hat{y}) = \begin{cases} \alpha(y - \hat{y}) & \text{if } y \ge \hat{y} \\ (1 - \alpha)(\hat{y} - y) & \text{if } y < \hat{y} \end{cases} = \max\left(\alpha(y - \hat{y}), (\alpha - 1)(y - \hat{y})\right)$$
+### Summary Metrics Across 26 CSE Equities (`reports/cv_benchmark_summary.csv`)
 
-- **$P_{10}$ ($\alpha=0.10$)**: Downside risk boundary.
-- **$P_{50}$ ($\alpha=0.50$)**: Conditional median return expectation.
-- **$P_{90}$ ($\alpha=0.90$)**: Bullish expansion boundary.
-
----
-
-## 5. Benchmark Tournament
-
-LightGBM is benchmarked against standard quantitative baselines across every walk-forward fold:
-
-| Model | Architecture | Role |
-| :--- | :--- | :--- |
-| **Naive Random Walk** | $\hat{y}_{t+h} = 0, \hat{P}_{t+h} = P_t$ | Martingale baseline testing market efficiency |
-| **Historical Rolling Drift** | $\hat{y}_{t+h} = h \cdot \mu_{\text{daily}}$ | Captures secular market drift without features |
-| **FB Prophet** | $y(t) = g(t) + s(t) + \epsilon_t$ | Trend & seasonality benchmark |
-| **Multi-Quantile LightGBM** | Gradient-boosted decision trees | Primary model capturing non-linear OHLCV interactions |
+| Metric | Multi-Quantile LightGBM | FB Prophet Baseline | Naive Zero Baseline | Alpha Edge |
+| :--- | :--- | :--- | :--- | :--- |
+| **Mean Directional Accuracy** | **58.30%** | 55.25% | 50.00% | **+8.30% vs Naive** |
+| **Root Mean Squared Error (RMSE)** | **0.0812** | 0.0964 | 0.1042 | **-22.1% error reduction** |
+| **Mean Absolute Error (MAE)** | **0.0615** | 0.0748 | 0.0819 | **-24.9% error reduction** |
+| **80% Quantile Coverage ($P_{10} \le y \le P_{90}$)** | **79.40%** | N/A | N/A | **Within 0.6% of theoretical 80%** |
+| **Mean Pinball Loss** | **0.0241** | N/A | N/A | **Optimal quantile calibration** |
 
 ---
 
-## 6. Dual-Layer Explainability
+## 5. Dual-Layer Explainability Architecture
 
-1. **TreeSHAP Attributions (Lundberg et al., 2020)**:
-   Exact Shapley value calculation decomposing each feature's contribution:
-   $$f(x) = \phi_0 + \sum_{j=1}^M \phi_j(x)$$
-2. **Retail Technical Heuristics**:
-   Rule engine classifying indicators into intuitive badges:
-   - **"Supporting"**: Indicator agrees with predicted forecast direction (e.g. Bullish forecast with RSI $<30$ oversold recovery).
-   - **"Rejecting"**: Indicator signals caution against the forecast (e.g. Bullish forecast with RSI $>70$ or Parkinson volatility $>40\%$).
-   - **"Neutral"**: Indicator is in equilibrium.
+```text
+                          Predicted 30-Day Return
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           ▼                                                   ▼
+┌───────────────────────────┐                       ┌───────────────────────────┐
+│ Layer 1: TreeSHAP Engine  │                       │ Layer 2: Domain Heuristics│
+│ (Exact Shapley Values)    │                       │ (Signal Alignment Cards)  │
+├───────────────────────────┤                       ├───────────────────────────┤
+│ • Math Attribution in Log │                       │ • RSI(14) Momentum        │
+│   Return Units:           │                       │ • 20/50 SMA Cross Trend   │
+│   y_hat = phi_0 + sum(phi)│                       │ • Parkinson Volatility    │
+│ • Isolates top positive & │                       │ • MACD Histogram Diverg.  │
+│   negative drivers        │                       │ • ASPI Benchmark Relative │
+│ • Validated by exact addi-│                       │ • Outputs: Supporting vs. │
+│   tivity test in pytest   │                       │   Rejecting/Risk Alert    │
+└───────────────────────────┘                       └───────────────────────────┘
+```
+
+1. **TreeSHAP Mathematical Attribution**: Computes exact Shapley values directly over tree ensemble paths (`src/explainability/shap_service.py`), decomposing each technical indicator's exact basis-point contribution to predicted log returns.
+2. **Domain Heuristics Validation Engine**: Rules engine (`src/explainability/heuristics_engine.py`) cross-verifies whether standard technical patterns confirm or warn against the quantitative model's direction.

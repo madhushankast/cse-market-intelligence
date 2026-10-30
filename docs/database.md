@@ -1,96 +1,166 @@
-# Database Schema
+# Database Schema & Storage Architecture
 
-The platform utilizes SQLite (`cse.db`) for lightweight local persistence and fast local query speeds. Object Relational Mapping (ORM) is managed via **SQLAlchemy**.
+## 1. Storage Architecture Overview
 
-Database engine instantiation and connection pooling logic reside in [`backend/app/database/connection.py`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/connection.py), while the model class declarations are located in [`backend/app/database/models.py`](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/models.py) and separate model files.
-
----
-
-## 1. Table: `stock_prices`
-Stores historical and ingested daily OHLCV stock data.
-- **Model Class**: `StockPrice` ([models.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/models.py))
-
-| Column Name  | Data Type | Constraints               | Description                                  |
-|--------------|-----------|---------------------------|----------------------------------------------|
-| `id`         | Integer   | Primary Key, Indexed      | Unique record identifier                     |
-| `symbol`     | String    | Indexed, Not Null         | Stock Ticker (e.g., `COMB`, `JKH`, `SAMP`)   |
-| `date`       | String    | Indexed, Not Null         | Trading Date (`YYYY-MM-DD`)                  |
-| `open`       | Float     | Not Null                  | Daily open price                             |
-| `high`       | Float     | Not Null                  | Daily high price                             |
-| `low`        | Float     | Not Null                  | Daily low price                              |
-| `close`      | Float     | Not Null                  | Daily close price                            |
-| `volume`     | Integer   | Not Null                  | Traded volume                                |
-| `created_at` | DateTime  | Default: UTC Now          | Database record insertion timestamp          |
+The platform uses a **tiered hybrid storage architecture**:
+1. **Tier 1 (Lakehouse / Serving Layer)**: Zero-copy columnar Apache Parquet files (`data/processed/*.parquet`) loaded via PyArrow and DuckDB/Pandas. Guarantees microsecond latency for real-time model inference.
+2. **Tier 2 (Relational Cloud Store)**: Managed PostgreSQL (Supabase) via SQLAlchemy ORM. Serves as the continuous system of record for historical prices, official ASPI index closes, generated forecast logs, and MLOps audit traces.
 
 ---
 
-## 2. Table: `alternative_data`
-Stores macroeconomic indicators and web search interest indicators.
-- **Model Class**: `AlternativeData` ([models.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/models.py))
+## 2. Entity Relationship Model (ERD)
 
-| Column Name  | Data Type | Constraints          | Description                                                    |
-|--------------|-----------|----------------------|----------------------------------------------------------------|
-| `id`         | Integer   | Primary Key, Indexed | Unique record identifier                                       |
-| `source`     | String    | Indexed, Not Null    | Source of data (e.g., `CBSL`, `Google`)                        |
-| `indicator`  | String    | Indexed, Not Null    | Name of indicator (e.g., `Inflation_CCPI`, `ExchangeRate_USD`) |
-| `date`       | String    | Indexed, Not Null    | Reference date (`YYYY-MM-DD` or `YYYY-MM`)                     |
-| `value`      | Float     | Not Null             | Value of the indicator                                         |
-| `frequency`  | String    | Not Null             | Periodicity (e.g., `Daily`, `Weekly`, `Monthly`)               |
-| `created_at` | DateTime  | Default: UTC Now     | Database record insertion timestamp                            |
+```mermaid
+erDiagram
+    STOCK_PRICES {
+        varchar(32) symbol PK
+        date date PK
+        numeric(12,2) open
+        numeric(12,2) high
+        numeric(12,2) low
+        numeric(12,2) close
+        bigint volume
+        timestamptz created_at
+    }
+
+    ASPI_INDEX {
+        date date PK
+        numeric(12,2) close
+        numeric(12,2) change
+        numeric(8,4) pct_change
+        bigint volume
+        timestamptz created_at
+    }
+
+    FORECAST_PREDICTIONS {
+        bigserial id PK
+        varchar(32) symbol FK
+        date as_of_date
+        integer horizon_days
+        numeric(12,2) current_price
+        numeric(12,2) price_p10
+        numeric(12,2) price_p50
+        numeric(12,2) price_p90
+        numeric(8,4) p10_log_return
+        numeric(8,4) p50_log_return
+        numeric(8,4) p90_log_return
+        json trajectory_json
+        json shap_json
+        json heuristics_json
+        timestamptz created_at
+    }
+
+    PIPELINE_RUNS {
+        bigserial id PK
+        date execution_date
+        varchar(64) pipeline_type
+        varchar(32) status
+        integer total_symbols
+        integer success_count
+        integer error_count
+        numeric(10,2) duration_seconds
+        json details
+        timestamptz created_at
+    }
+
+    STOCK_PRICES ||--o{ FORECAST_PREDICTIONS : "generates"
+```
 
 ---
 
-## 3. Table: `forecast_results`
-Stores the outputs from forecasting runs.
-- **Model Class**: `ForecastResult` ([models.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/database/models.py))
+## 3. Table Definitions & Constraints
 
-| Column Name        | Data Type | Constraints          | Description                                              |
-|--------------------|-----------|----------------------|----------------------------------------------------------|
-| `id`               | Integer   | Primary Key, Indexed | Unique record identifier                                 |
-| `symbol`           | String    | Indexed, Not Null    | Stock symbol forecasted                                  |
-| `date`             | String    | Indexed, Not Null    | Forecast generation date                                 |
-| `model`            | String    | Not Null             | Model type (e.g. `xgboost`, `sarimax`, `baseline`)       |
-| `horizon`          | Integer   | Not Null             | Forecast step horizon in trading days                    |
-| `expected_return`  | Float     | Not Null             | Estimated returns over horizon                           |
-| `forecast_values`  | Text      | Not Null             | JSON serialized array of forecasted close prices         |
-| `explanation_json` | Text      | Nullable             | JSON serialized SHAP or parameter coefficient details    |
-| `created_at`       | DateTime  | Default: UTC Now     | Model execution run timestamp                            |
+### 3.1 `stock_prices`
+Continuous daily OHLCV trading records across all 26 listed equities.
+- **Composite Primary Key**: `(symbol, date)` — guarantees idempotent daily syncs and prevents duplicate bars.
+- **Indices**:
+  - `ix_stock_prices_symbol` ON `(symbol)`
+  - `ix_stock_prices_date` ON `(date DESC)`
 
----
-
-## 4. Table: `job_logs`
-Tracks pipeline job executions, monitoring runtime health and processing volumes.
-- **Model Class**: `JobLog` ([job_log.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/models/job_log.py))
-
-| Column Name      | Data Type | Constraints          | Description                                       |
-|------------------|-----------|----------------------|---------------------------------------------------|
-| `id`             | Integer   | Primary Key, Indexed | Unique log record identifier                      |
-| `pipeline`       | String    | Indexed, Not Null    | Name of pipeline executed (e.g. `Daily Pipeline`) |
-| `started_at`     | DateTime  | Not Null, Default    | Initialization timestamp                          |
-| `finished_at`    | DateTime  | Nullable             | Completion timestamp                              |
-| `status`         | String    | Not Null             | State of job (`Running`, `Success`, `Failed`)     |
-| `rows_processed` | Integer   | Default: 0           | Number of rows modified or ingested               |
-| `error_message`  | Text      | Nullable             | Stack trace details if job status is `Failed`     |
+```sql
+CREATE TABLE stock_prices (
+    symbol VARCHAR(32) NOT NULL,
+    date DATE NOT NULL,
+    open NUMERIC(12, 2) NOT NULL,
+    high NUMERIC(12, 2) NOT NULL,
+    low NUMERIC(12, 2) NOT NULL,
+    close NUMERIC(12, 2) NOT NULL,
+    volume BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (symbol, date),
+    CONSTRAINT uq_stock_price_symbol_date UNIQUE (symbol, date)
+);
+```
 
 ---
 
-## 5. Table: `prediction_explanations`
-Logs detailed feature impact scores for auditability and forecasting explanation stability analysis.
-- **Model Class**: `PredictionExplanationLog` ([prediction_explanation.py](file:///c:/Ongoing%20Projects/New%20folder/backend/app/models/prediction_explanation.py))
+### 3.2 `aspi_index`
+Official All Share Price Index (ASPI) point-in-time closing values.
+- **Primary Key**: `date`
+- **Purpose**: Computes market-relative technical features (e.g. `aspi_return_30d`, `relative_strength_30d`, `rolling_corr_aspi_30d`).
 
-| Column Name          | Data Type | Constraints               | Description                                            |
-|----------------------|-----------|---------------------------|--------------------------------------------------------|
-| `id`                 | Integer   | Primary Key, Indexed      | Unique record identifier                               |
-| `symbol`             | String    | Indexed, Not Null         | Stock symbol being explained                           |
-| `model`              | String    | Not Null                  | Prediction engine utilized                             |
-| `prediction`         | Float     | Nullable                  | Forecasted target price                                |
-| `confidence`         | Float     | Nullable                  | Model confidence estimation                            |
-| `baseline_value`     | Float     | Nullable                  | Baseline expected value of target                      |
-| `explanation_method` | String    | Not Null                  | explainer format (e.g., `SHAP`, `Coefficients`)        |
-| `feature_name`       | String    | Not Null                  | Name of feature input (e.g., `rsi`, `ExchangeRate_USD`)|
-| `impact`             | Float     | Not Null                  | Directional SHAP value / coefficient value             |
-| `abs_impact`         | Float     | Not Null                  | Absolute impact value for ranking                      |
-| `direction`          | String    | Not Null                  | Impact category: `positive` or `negative`              |
-| `feature_rank`       | Integer   | Nullable                  | Relative rank of feature importance (1 = highest)       |
-| `warning`            | Text      | Nullable                  | Explainer evaluation warnings                          |
-| `created_at`         | DateTime  | Indexed, Default: UTC Now | Log entry creation timestamp                           |
+```sql
+CREATE TABLE aspi_index (
+    date DATE PRIMARY KEY,
+    close NUMERIC(12, 2) NOT NULL,
+    change NUMERIC(12, 2) DEFAULT 0,
+    pct_change NUMERIC(8, 4) DEFAULT 0,
+    volume BIGINT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+### 3.3 `forecast_predictions`
+Audit trail of all 30-day ahead multi-quantile predictions, TreeSHAP attributions, and heuristic signals generated by the daily pipeline.
+
+```sql
+CREATE TABLE forecast_predictions (
+    id BIGSERIAL PRIMARY KEY,
+    symbol VARCHAR(32) NOT NULL,
+    as_of_date DATE NOT NULL,
+    horizon_days INTEGER NOT NULL DEFAULT 30,
+    current_price NUMERIC(12, 2) NOT NULL,
+    price_p10 NUMERIC(12, 2) NOT NULL,
+    price_p50 NUMERIC(12, 2) NOT NULL,
+    price_p90 NUMERIC(12, 2) NOT NULL,
+    p10_log_return NUMERIC(8, 4) NOT NULL,
+    p50_log_return NUMERIC(8, 4) NOT NULL,
+    p90_log_return NUMERIC(8, 4) NOT NULL,
+    trajectory_json JSON,
+    shap_json JSON,
+    heuristics_json JSON,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX ix_forecast_symbol_date ON forecast_predictions(symbol, as_of_date DESC);
+```
+
+---
+
+### 3.4 `pipeline_runs`
+MLOps operational execution telemetry tracking pipeline runtimes, symbol counts, and failure rates.
+
+```sql
+CREATE TABLE pipeline_runs (
+    id BIGSERIAL PRIMARY KEY,
+    execution_date DATE NOT NULL,
+    pipeline_type VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    total_symbols INTEGER DEFAULT 0,
+    success_count INTEGER DEFAULT 0,
+    error_count INTEGER DEFAULT 0,
+    duration_seconds NUMERIC(10, 2) DEFAULT 0,
+    details JSON,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+## 4. Database Connection & Pooling Strategy
+
+In `src/database/session.py`, database connections are managed via SQLAlchemy engine configurations:
+- **Connection Pooling**: `pool_size=5`, `max_overflow=10`, `pool_recycle=300`.
+- **Dialect Agnostic**: Fully supports PostgreSQL (`postgresql+psycopg2://`) as well as local SQLite (`sqlite:///data/cse.db`) fallback when testing without network access.
+- **Idempotent Upserts**: `scripts/backfill_postgres.py` implements database-level `ON CONFLICT (symbol, date) DO UPDATE` statements, ensuring bulk replays do not corrupt historical data.
