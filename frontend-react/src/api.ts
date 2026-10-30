@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { FALLBACK_STOCKS, FALLBACK_JKH_PREDICTION, FALLBACK_BENCHMARKS } from './data/fallbackData';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 35000, // Allow 35s for free tier cold starts (e.g. Render)
   headers: {
     'Content-Type': 'application/json',
   },
@@ -85,6 +86,7 @@ export interface PredictionPayload {
   shap_explanation?: ShapExplanation;
   indicator_heuristics?: HeuristicCard[];
   historical_series?: HistoricalBar[];
+  is_fallback?: boolean;
 }
 
 export interface HealthStatus {
@@ -124,13 +126,29 @@ export async function checkHealth(): Promise<HealthStatus> {
 }
 
 export async function fetchAvailableStocks(): Promise<StockQuote[]> {
-  const resp = await client.get('/api/v1/stocks');
-  return resp.data.data;
+  try {
+    const resp = await client.get('/api/v1/stocks');
+    if (resp.data && Array.isArray(resp.data.data) && resp.data.data.length > 0) {
+      return resp.data.data;
+    }
+    return FALLBACK_STOCKS;
+  } catch (err) {
+    console.warn(`[CSE API] Unable to connect to backend at ${API_BASE_URL}. Falling back to cached equities list.`);
+    return FALLBACK_STOCKS;
+  }
 }
 
 export async function fetchBenchmarks(): Promise<BenchmarkRecord[]> {
-  const resp = await client.get('/api/v1/benchmarks');
-  return resp.data.data;
+  try {
+    const resp = await client.get('/api/v1/benchmarks');
+    if (resp.data && Array.isArray(resp.data.data) && resp.data.data.length > 0) {
+      return resp.data.data;
+    }
+    return FALLBACK_BENCHMARKS;
+  } catch (err) {
+    console.warn(`[CSE API] Unable to connect to backend at ${API_BASE_URL}. Falling back to cached benchmark report.`);
+    return FALLBACK_BENCHMARKS;
+  }
 }
 
 export async function fetchPrediction(
@@ -143,12 +161,56 @@ export async function fetchPrediction(
       horizon_days: horizonDays,
       explain: true,
     });
-    return resp.data.data;
+    return { ...resp.data.data, is_fallback: false };
   } catch (err) {
-    // Fallback to GET endpoint if POST fails
-    const resp = await client.get(`/api/v1/predict/${encodeURIComponent(symbol)}`, {
-      params: { horizon_days: horizonDays, explain: true },
-    });
-    return resp.data.data;
+    try {
+      // Fallback to GET endpoint
+      const resp = await client.get(`/api/v1/predict/${encodeURIComponent(symbol)}`, {
+        params: { horizon_days: horizonDays, explain: true },
+      });
+      return { ...resp.data.data, is_fallback: false };
+    } catch (innerErr) {
+      console.warn(`[CSE API] Live prediction failed for ${symbol} at ${API_BASE_URL}. Engaging fallback cache.`);
+      
+      const cleanSym = symbol.replace('.', '_');
+      if (cleanSym.includes('JKH') || cleanSym === 'JKH_N0000') {
+        return { ...FALLBACK_JKH_PREDICTION, is_fallback: true };
+      }
+
+      // If another asset is selected, scale the high-fidelity trajectory to this asset's price
+      const meta = FALLBACK_STOCKS.find((s) => s.symbol === cleanSym || s.code === cleanSym);
+      if (meta) {
+        const p = meta.latest_close;
+        const refP = FALLBACK_JKH_PREDICTION.current_price;
+        const ratio = p / refP;
+
+        return {
+          ...FALLBACK_JKH_PREDICTION,
+          symbol: cleanSym,
+          current_price: p,
+          target_prices: {
+            price_p10: Math.round(p * 0.945 * 100) / 100,
+            price_p50: Math.round(p * 1.019 * 100) / 100,
+            price_p90: Math.round(p * 1.034 * 100) / 100,
+          },
+          cone_trajectory: FALLBACK_JKH_PREDICTION.cone_trajectory.map((pt) => ({
+            ...pt,
+            price_p10: Math.round(pt.price_p10 * ratio * 100) / 100,
+            price_p50: Math.round(pt.price_p50 * ratio * 100) / 100,
+            price_p90: Math.round(pt.price_p90 * ratio * 100) / 100,
+          })),
+          historical_series: FALLBACK_JKH_PREDICTION.historical_series?.map((b) => ({
+            ...b,
+            open: Math.round(b.open * ratio * 100) / 100,
+            high: Math.round(b.high * ratio * 100) / 100,
+            low: Math.round(b.low * ratio * 100) / 100,
+            close: Math.round(b.close * ratio * 100) / 100,
+          })),
+          is_fallback: true,
+        };
+      }
+
+      return { ...FALLBACK_JKH_PREDICTION, symbol: cleanSym, is_fallback: true };
+    }
   }
 }

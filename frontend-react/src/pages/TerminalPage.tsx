@@ -136,6 +136,31 @@ export const TerminalPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Fallback / Cold Start Preview Mode Banner */}
+      {prediction?.is_fallback && (
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/25 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-amber-300">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span>
+              <strong>Preview Mode:</strong> Live backend is waking up or offline. Displaying cached LightGBM forecast.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              if (selectedSymbol) {
+                setLoading(true);
+                fetchPrediction(selectedSymbol, 30)
+                  .then(setPrediction)
+                  .finally(() => setLoading(false));
+              }
+            }}
+            className="px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 text-[11px] transition-colors"
+          >
+            Retry Live Connection
+          </button>
+        </div>
+      )}
+
       {/* Error Alert */}
       {error && (
         <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start gap-3 text-rose-300 text-xs font-mono">

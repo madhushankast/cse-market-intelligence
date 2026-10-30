@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { checkHealth, type HealthStatus } from '../api';
+import { checkHealth, API_BASE_URL, type HealthStatus } from '../api';
 import {
   BarChart2,
   TrendingUp,
@@ -8,6 +8,8 @@ import {
   BookOpen,
   ExternalLink,
   Zap,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -21,7 +23,7 @@ export const Navbar: React.FC = () => {
       checkHealth()
         .then(setHealth)
         .catch(() => setHealth(null));
-    }, 30000);
+    }, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -73,11 +75,11 @@ export const Navbar: React.FC = () => {
           </NavLink>
 
           <a
-            href="http://localhost:8000/docs"
+            href={`${API_BASE_URL}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-gray-200 hover:bg-subsurface/50 border border-transparent hover:border-borderline transition-all"
-            title="FastAPI Interactive Swagger Documentation"
+            title={`FastAPI Swagger Documentation (${API_BASE_URL}/docs)`}
           >
             <span>API Docs</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -86,14 +88,27 @@ export const Navbar: React.FC = () => {
 
         {/* Right Status Indicator */}
         <div className="hidden lg:flex items-center gap-3 text-xs font-mono">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>{health ? 'API Connected' : 'Online'}</span>
-          </div>
+          {health ? (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+              title={`Connected to live backend at ${API_BASE_URL} (${health.models_count} trained models online)`}
+            >
+              <Wifi className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>Live API ({health.models_count || 26} Models)</span>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400"
+              title={`Backend offline at ${API_BASE_URL}. Showing cached models & preview data.`}
+            >
+              <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+              <span>Offline / Demo Mode</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1 text-[11px] text-muted">
             <Zap className="w-3 h-3 text-brand" />
-            <span>26 Equities</span>
+            <span>{health ? `${health.available_equities_count || 26} Equities` : '26 Equities'}</span>
           </div>
         </div>
       </div>
