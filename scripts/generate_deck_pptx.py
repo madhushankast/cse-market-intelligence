@@ -2,6 +2,7 @@
 Generate Minimal, Clean 5-Slide LinkedIn Carousel Presentation Deck (.pptx)
 Matches the 4:5 Mobile Portrait Carousel Aspect Ratio (8.5 x 10.625 inches)
 Palette: Plain Deep Dark Canvas (#090D16) with High-Impact Minimal Typography
+Focused on: AI / ML / Software Engineering Skills & Concrete Technical Implementation
 """
 
 from pathlib import Path
@@ -25,8 +26,8 @@ COLOR_WHITE = RGBColor(248, 250, 252)  # #f8fafc title
 COLOR_MUTED = RGBColor(148, 163, 184)  # #94a3b8 body
 COLOR_DIM = RGBColor(100, 116, 139)    # #64748b sub / footer
 COLOR_CYAN = RGBColor(56, 189, 248)    # #38bdf8 brand accent
-COLOR_EMERALD = RGBColor(52, 211, 153) # #34d399 bullish / pivot
-COLOR_ROSE = RGBColor(248, 113, 113)   # #f87171 bearish / risk / trap
+COLOR_EMERALD = RGBColor(52, 211, 153) # #34d399 bullish / stationarity
+COLOR_ROSE = RGBColor(248, 113, 113)   # #f87171 bearish / risk / anti-pattern
 COLOR_PURPLE = RGBColor(192, 132, 252) # #c084fc shap / stack
 
 FONT_TITLE = "Trebuchet MS"
@@ -44,7 +45,7 @@ def set_bg(slide):
 
 def add_header(slide, tag, title, desc):
     # Tag
-    tb_tag = slide.shapes.add_textbox(Inches(0.7), Inches(0.7), Inches(7.1), Inches(0.35))
+    tb_tag = slide.shapes.add_textbox(Inches(0.7), Inches(0.65), Inches(7.1), Inches(0.3))
     tf_tag = tb_tag.text_frame
     p_tag = tf_tag.paragraphs[0]
     p_tag.text = tag
@@ -54,32 +55,32 @@ def add_header(slide, tag, title, desc):
     p_tag.font.color.rgb = COLOR_CYAN
 
     # Title
-    tb_t = slide.shapes.add_textbox(Inches(0.7), Inches(1.1), Inches(7.1), Inches(1.2))
+    tb_t = slide.shapes.add_textbox(Inches(0.7), Inches(0.98), Inches(7.1), Inches(1.2))
     tf_t = tb_t.text_frame
     tf_t.word_wrap = True
     p_t = tf_t.paragraphs[0]
     p_t.text = title
     p_t.font.name = FONT_TITLE
-    p_t.font.size = Pt(28)
+    p_t.font.size = Pt(27)
     p_t.font.bold = True
     p_t.font.color.rgb = COLOR_WHITE
 
     # Desc
-    tb_d = slide.shapes.add_textbox(Inches(0.7), Inches(2.35), Inches(7.1), Inches(0.9))
+    tb_d = slide.shapes.add_textbox(Inches(0.7), Inches(2.25), Inches(7.1), Inches(0.85))
     tf_d = tb_d.text_frame
     tf_d.word_wrap = True
     p_d = tf_d.paragraphs[0]
     p_d.text = desc
     p_d.font.name = FONT_BODY
-    p_d.font.size = Pt(14)
+    p_d.font.size = Pt(13.5)
     p_d.font.color.rgb = COLOR_MUTED
 
 
 def add_footer(slide, index_str):
-    tb = slide.shapes.add_textbox(Inches(0.7), Inches(9.8), Inches(7.1), Inches(0.4))
+    tb = slide.shapes.add_textbox(Inches(0.7), Inches(9.85), Inches(7.1), Inches(0.35))
     tf = tb.text_frame
     p = tf.paragraphs[0]
-    p.text = "COLOMBO STOCK EXCHANGE (CSE) MLOPS"
+    p.text = "AI / ML SYSTEM ENGINEERING"
     p.font.name = FONT_MONO
     p.font.size = Pt(10)
     p.font.color.rgb = COLOR_DIM
@@ -99,286 +100,321 @@ def make_card(slide, left, top, width, height, border_color=COLOR_BORDER):
     return card
 
 
+def add_skill_pills(slide, left, top, skills):
+    """Draw clean monospaced tech stack pills."""
+    tb = slide.shapes.add_textbox(left, top, Inches(7.1), Inches(0.4))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = "TECH STACK:  "
+    p.font.name = FONT_MONO
+    p.font.size = Pt(9.5)
+    p.font.bold = True
+    p.font.color.rgb = COLOR_DIM
+
+    for s in skills:
+        run = p.add_run()
+        run.text = f" [{s}] "
+        run.font.name = FONT_MONO
+        run.font.size = Pt(9.5)
+        run.font.bold = True
+        run.font.color.rgb = COLOR_CYAN
+
+
 # ==============================================================================
-# SLIDE 1: HOOK & THE PROBLEM
+# SLIDE 1: FINANCIAL ML MATHEMATICS
 # ==============================================================================
 s1 = prs.slides.add_slide(blank_layout)
 set_bg(s1)
 add_header(
     s1,
-    "[ 01 / PROBLEM & PIVOT ]",
-    "Why Predicting Stock Prices is an Anti-Pattern",
-    "Predicting raw price points (P_t+30) creates a delayed echo of yesterday. Real financial ML forecasts stationary forward returns.",
+    "[ 01 / FINANCIAL ML MATHEMATICS ]",
+    "Solving Time-Series Non-Stationarity",
+    "How I engineered a stationary quantitative learning target, eliminating the identity lag trap that plagues naive financial ML.",
 )
 
-# Card 1: The Mistake
-make_card(s1, Inches(0.7), Inches(3.6), Inches(7.1), Inches(2.6), COLOR_ROSE)
-tb1 = s1.shapes.add_textbox(Inches(0.9), Inches(3.75), Inches(6.7), Inches(2.3))
+# Card 1: Anti-Pattern
+make_card(s1, Inches(0.7), Inches(3.3), Inches(7.1), Inches(2.7), COLOR_ROSE)
+tb1 = s1.shapes.add_textbox(Inches(0.9), Inches(3.45), Inches(6.7), Inches(2.4))
 tf1 = tb1.text_frame
 tf1.word_wrap = True
 p = tf1.paragraphs[0]
-p.text = "[ THE MISTAKE: RAW NOMINAL PRICE ]"
+p.text = "THE PERSISTENCE ANTI-PATTERN (I(1) UNIT ROOT)"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_ROSE
 
 p = tf1.add_paragraph()
-p.text = "P_hat(t+30) ~= P_t"
+p.text = "Predicting Raw Nominals: P_hat(t+30) ~= P_t"
 p.font.name = FONT_TITLE
-p.font.size = Pt(18)
+p.font.size = Pt(17)
 p.font.bold = True
 p.font.color.rgb = COLOR_WHITE
 p.space_before = Pt(6)
 
 p = tf1.add_paragraph()
-p.text = "Non-stationary prices trick models into outputting today's price as tomorrow's forecast with synthetic 98% R^2 and zero actual alpha."
+p.text = "MSE optimization on raw price levels creates identity models: the booster simply outputs yesterday's price with synthetic 98% R^2 and zero predictive alpha."
 p.font.name = FONT_BODY
-p.font.size = Pt(13)
+p.font.size = Pt(12.5)
 p.font.color.rgb = COLOR_MUTED
 p.space_before = Pt(8)
 
-# Card 2: The Fix
-make_card(s1, Inches(0.7), Inches(6.5), Inches(7.1), Inches(2.6), COLOR_EMERALD)
-tb2 = s1.shapes.add_textbox(Inches(0.9), Inches(6.65), Inches(6.7), Inches(2.3))
+# Card 2: Mathematical Formulation
+make_card(s1, Inches(0.7), Inches(6.2), Inches(7.1), Inches(2.7), COLOR_EMERALD)
+tb2 = s1.shapes.add_textbox(Inches(0.9), Inches(6.35), Inches(6.7), Inches(2.4))
 tf2 = tb2.text_frame
 tf2.word_wrap = True
 p = tf2.paragraphs[0]
-p.text = "[ THE FIX: 30-DAY FORWARD LOG RETURN ]"
+p.text = "MY MATHEMATICAL FORMULATION"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_EMERALD
 
 p = tf2.add_paragraph()
-p.text = "y_t = ln( P_{t+30} / P_t )"
+p.text = "y_t = ln( P_{t+30} / P_t )   [Forward Log Return]"
 p.font.name = FONT_TITLE
-p.font.size = Pt(18)
+p.font.size = Pt(17)
 p.font.bold = True
 p.font.color.rgb = COLOR_WHITE
 p.space_before = Pt(6)
 
 p = tf2.add_paragraph()
-p.text = "Enforces stationarity across all 26 Colombo Stock Exchange equities, forcing models to learn genuine momentum and cyclical turning points."
+p.text = "Induces strict covariance stationarity and scale invariance across 26 CSE blue-chip equities, forcing gradient-boosted trees to isolate genuine momentum and mean-reversion."
 p.font.name = FONT_BODY
-p.font.size = Pt(13)
+p.font.size = Pt(12.5)
 p.font.color.rgb = COLOR_MUTED
 p.space_before = Pt(8)
 
+add_skill_pills(s1, Inches(0.7), Inches(9.2), ["NumPy", "Pandas", "Statistical Stationarity", "Unit Root I(1)"])
 add_footer(s1, "Swipe >")
 
 
 # ==============================================================================
-# SLIDE 2: UNCERTAINTY CONES
+# SLIDE 2: DATA ENGINEERING & LAKEHOUSE
 # ==============================================================================
 s2 = prs.slides.add_slide(blank_layout)
 set_bg(s2)
 add_header(
     s2,
-    "[ 02 / UNCERTAINTY CONES ]",
-    "Replacing Point Estimates with Risk Envelopes",
-    "Markets are probabilistic. We train three Multi-Quantile LightGBM models minimizing Pinball Loss.",
+    "[ 02 / DATA ENGINEERING & LAKEHOUSE ]",
+    "High-Throughput Vectorized Feature Store",
+    "Engineered a zero-copy Apache Parquet lakehouse coupled with 22 leak-free microstructure estimators.",
 )
 
-cones = [
-    ("P10 Floor", "Quantile 0.10", "Downside Value-at-Risk support boundary. Penalizes extreme drawdowns 9x more than upside misses.", COLOR_ROSE),
-    ("P50 Median", "Quantile 0.50", "Expected median return trajectory. Minimizes MAE, robust against illiquid price spikes.", COLOR_CYAN),
-    ("P90 Ceiling", "Quantile 0.90", "Bullish expansion envelope indicating upper momentum resistance levels.", COLOR_EMERALD),
-]
-for i, (name, q_val, desc, col) in enumerate(cones):
-    top = Inches(3.6 + i * 1.95)
-    make_card(s2, Inches(0.7), top, Inches(7.1), Inches(1.7), col)
-    tb = s2.shapes.add_textbox(Inches(0.9), top + Inches(0.12), Inches(6.7), Inches(1.4))
-    tf = tb.text_frame
-    tf.word_wrap = True
+# Card 1: Columnar Lakehouse
+make_card(s2, Inches(0.7), Inches(3.3), Inches(7.1), Inches(2.6), COLOR_CYAN)
+tb2_1 = s2.shapes.add_textbox(Inches(0.9), Inches(3.45), Inches(6.7), Inches(2.3))
+tf2_1 = tb2_1.text_frame
+tf2_1.word_wrap = True
 
-    p = tf.paragraphs[0]
-    p.text = f"{name}   "
-    p.font.name = FONT_TITLE
-    p.font.size = Pt(16)
-    p.font.bold = True
-    p.font.color.rgb = col
-
-    r = p.add_run()
-    r.text = f"[{q_val}]"
-    r.font.name = FONT_MONO
-    r.font.size = Pt(11)
-    r.font.color.rgb = COLOR_DIM
-
-    p2 = tf.add_paragraph()
-    p2.text = desc
-    p2.font.name = FONT_BODY
-    p2.font.size = Pt(13)
-    p2.font.color.rgb = COLOR_WHITE
-    p2.space_before = Pt(6)
-
-add_footer(s2, "Swipe >")
-
-
-# ==============================================================================
-# SLIDE 3: LEAKAGE-FREE VALIDATION
-# ==============================================================================
-s3 = prs.slides.add_slide(blank_layout)
-set_bg(s3)
-add_header(
-    s3,
-    "[ 03 / VALIDATION RIGOR ]",
-    "Zero Lookahead Leakage: Purged & Embargoed CV",
-    "A 30-day forward return target leaks data if standard K-Fold CV is used. We enforce a 30-day purge buffer.",
-)
-
-# Diagram Card
-make_card(s3, Inches(0.7), Inches(3.6), Inches(7.1), Inches(2.6), COLOR_CYAN)
-tb3 = s3.shapes.add_textbox(Inches(0.9), Inches(3.75), Inches(6.7), Inches(2.3))
-tf3 = tb3.text_frame
-tf3.word_wrap = True
-p = tf3.paragraphs[0]
-p.text = "[ 5-FOLD EXPANDING TIMELINE WITH EMBARGO ]"
+p = tf2_1.paragraphs[0]
+p.text = "COLUMNAR ZERO-COPY SERVING LAYER"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_CYAN
 
-p = tf3.add_paragraph()
-p.text = (
-    "Fold 1: [== Train ==] [Purge: 30d] [Test: 60d] [Embargo: 30d]\n"
-    "Fold 2: [==== Train ====] [Purge: 30d] [Test: 60d] [Embargo: 30d]\n"
-    "Fold 3: [====== Train ======] [Purge: 30d] [Test: 60d] ..."
-)
-p.font.name = FONT_MONO
-p.font.size = Pt(10)
+p = tf2_1.add_paragraph()
+p.text = "Apache Parquet + PyArrow + DuckDB"
+p.font.name = FONT_TITLE
+p.font.size = Pt(17)
+p.font.bold = True
 p.font.color.rgb = COLOR_WHITE
-p.space_before = Pt(10)
+p.space_before = Pt(6)
 
-# Bottom 2 Cards
-make_card(s3, Inches(0.7), Inches(6.5), Inches(3.45), Inches(2.6), COLOR_CYAN)
-tb_b1 = s3.shapes.add_textbox(Inches(0.9), Inches(6.65), Inches(3.05), Inches(2.3))
-tf_b1 = tb_b1.text_frame
-tf_b1.word_wrap = True
-p = tf_b1.paragraphs[0]
-p.text = "30-DAY PURGE"
+p = tf2_1.add_paragraph()
+p.text = "Sub-millisecond columnar partition scans for all 26 equities (data/processed/*.parquet), bypassing slow SQL connection latency during real-time inference."
+p.font.name = FONT_BODY
+p.font.size = Pt(12.5)
+p.font.color.rgb = COLOR_MUTED
+p.space_before = Pt(8)
+
+# Card 2: Market Dynamics Pipeline
+make_card(s2, Inches(0.7), Inches(6.1), Inches(7.1), Inches(2.8), COLOR_CYAN)
+tb2_2 = s2.shapes.add_textbox(Inches(0.9), Inches(6.25), Inches(6.7), Inches(2.5))
+tf2_2 = tb2_2.text_frame
+tf2_2.word_wrap = True
+
+p = tf2_2.paragraphs[0]
+p.text = "VECTORIZED MARKET DYNAMICS PIPELINE"
 p.font.name = FONT_MONO
-p.font.size = Pt(13)
+p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_CYAN
-p = tf_b1.add_paragraph()
-p.text = "Drops training samples whose 30-day horizon overlaps with test dates."
+
+features = [
+    ("Parkinson Volatility", "High-Low dispersion (5x more efficient than close-to-close)"),
+    ("Momentum & Trend", "Wilder RSI(14), MACD Histogram, 20/50 SMA Golden Cross"),
+    ("Systematic Beta", "ASPI 30-Day relative alpha spread & rolling Pearson correlation"),
+]
+for f_name, f_desc in features:
+    p = tf2_2.add_paragraph()
+    p.text = f"• {f_name}: {f_desc}"
+    p.font.name = FONT_BODY
+    p.font.size = Pt(12)
+    p.font.color.rgb = COLOR_WHITE
+    p.space_before = Pt(6)
+
+add_skill_pills(s2, Inches(0.7), Inches(9.2), ["Apache Parquet", "PyArrow", "DuckDB", "Vectorized Math", "ETL Pipelines"])
+add_footer(s2, "Swipe >")
+
+
+# ==============================================================================
+# SLIDE 3: MLOPS & ALGORITHMIC RIGOR
+# ==============================================================================
+s3 = prs.slides.add_slide(blank_layout)
+set_bg(s3)
+add_header(
+    s3,
+    "[ 03 / MLOPS & ALGORITHMIC RIGOR ]",
+    "Purged Cross-Validation & Quantile Loss",
+    "Preventing overlapping target contamination with purged embargo gaps while optimizing asymmetric Pinball Loss.",
+)
+
+# Card 1: Purged & Embargoed CV
+make_card(s3, Inches(0.7), Inches(3.3), Inches(7.1), Inches(2.5), COLOR_CYAN)
+tb3_1 = s3.shapes.add_textbox(Inches(0.9), Inches(3.45), Inches(6.7), Inches(2.2))
+tf3_1 = tb3_1.text_frame
+tf3_1.word_wrap = True
+
+p = tf3_1.paragraphs[0]
+p.text = "CUSTOM PURGED & EMBARGOED WALK-FORWARD CV"
+p.font.name = FONT_MONO
+p.font.size = Pt(11)
+p.font.bold = True
+p.font.color.rgb = COLOR_CYAN
+
+p = tf3_1.add_paragraph()
+p.text = "Standard K-Fold leaks future 30-day returns. I built an expanding 5-fold CV engine with a 30-day purge gap (drops overlapping train labels) and a 30-day embargo buffer (kills serial correlation)."
 p.font.name = FONT_BODY
-p.font.size = Pt(13)
-p.font.color.rgb = COLOR_MUTED
+p.font.size = Pt(12.5)
+p.font.color.rgb = COLOR_WHITE
 p.space_before = Pt(8)
 
-make_card(s3, Inches(4.35), Inches(6.5), Inches(3.45), Inches(2.6), COLOR_EMERALD)
-tb_b2 = s3.shapes.add_textbox(Inches(4.55), Inches(6.65), Inches(3.05), Inches(2.3))
-tf_b2 = tb_b2.text_frame
-tf_b2.word_wrap = True
-p = tf_b2.paragraphs[0]
-p.text = "30-DAY EMBARGO"
+# Card 2: Multi-Quantile LightGBM
+make_card(s3, Inches(0.7), Inches(6.0), Inches(7.1), Inches(2.9), COLOR_EMERALD)
+tb3_2 = s3.shapes.add_textbox(Inches(0.9), Inches(6.15), Inches(6.7), Inches(2.6))
+tf3_2 = tb3_2.text_frame
+tf3_2.word_wrap = True
+
+p = tf3_2.paragraphs[0]
+p.text = "MULTI-QUANTILE LIGHTGBM (PINBALL LOSS)"
 p.font.name = FONT_MONO
-p.font.size = Pt(13)
+p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_EMERALD
-p = tf_b2.add_paragraph()
-p.text = "Blocks post-test auto-correlation spillover into future folds."
-p.font.name = FONT_BODY
-p.font.size = Pt(13)
-p.font.color.rgb = COLOR_MUTED
-p.space_before = Pt(8)
 
+quantiles = [
+    ("P10 Floor (q=0.10)", "Downside Value-at-Risk floor (9x penalty on drawdown misses)"),
+    ("P50 Median (q=0.50)", "Robust median expected trajectory (MAE optimization)"),
+    ("P90 Ceiling (q=0.90)", "Bullish expansion envelope (90th percentile resistance)"),
+]
+for q_name, q_desc in quantiles:
+    p = tf3_2.add_paragraph()
+    p.text = f"• {q_name}: {q_desc}"
+    p.font.name = FONT_BODY
+    p.font.size = Pt(12)
+    p.font.color.rgb = COLOR_WHITE
+    p.space_before = Pt(6)
+
+add_skill_pills(s3, Inches(0.7), Inches(9.2), ["LightGBM", "Quantile Regression", "Pinball Loss", "Purged & Embargoed CV", "Scikit-Learn"])
 add_footer(s3, "Swipe >")
 
 
 # ==============================================================================
-# SLIDE 4: DUAL-LAYER EXPLAINABILITY
+# SLIDE 4: EXPLAINABLE AI & INTERPRETABILITY
 # ==============================================================================
 s4 = prs.slides.add_slide(blank_layout)
 set_bg(s4)
 add_header(
     s4,
-    "[ 04 / EXPLAINABLE AI ]",
-    "Solving the Black-Box Dilemma",
-    "Bridging mathematical Shapley attributions with institutional trader heuristic cards.",
+    "[ 04 / EXPLAINABLE AI & INTERPRETABILITY ]",
+    "Dual-Layer Transparent XAI Architecture",
+    "Bridging mathematically verified Shapley attribution with domain-driven heuristic validation rules.",
 )
 
-# Layer 1
-make_card(s4, Inches(0.7), Inches(3.6), Inches(7.1), Inches(2.6), COLOR_PURPLE)
-tb4_1 = s4.shapes.add_textbox(Inches(0.9), Inches(3.75), Inches(6.7), Inches(2.3))
+# Card 1: TreeSHAP
+make_card(s4, Inches(0.7), Inches(3.3), Inches(7.1), Inches(2.6), COLOR_PURPLE)
+tb4_1 = s4.shapes.add_textbox(Inches(0.9), Inches(3.45), Inches(6.7), Inches(2.3))
 tf4_1 = tb4_1.text_frame
 tf4_1.word_wrap = True
+
 p = tf4_1.paragraphs[0]
-p.text = "[ LAYER 1: MATHEMATICAL TREESHAP ]"
+p.text = "LAYER 1: EXACT TREESHAP ATTRIBUTION"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_PURPLE
 
 p = tf4_1.add_paragraph()
-p.text = "Exact Additive Shapley Values"
+p.text = "y_hat = phi_0 + sum( phi_i )   [Exact Additive Decomp]"
 p.font.name = FONT_TITLE
-p.font.size = Pt(18)
+p.font.size = Pt(16)
 p.font.bold = True
 p.font.color.rgb = COLOR_WHITE
 p.space_before = Pt(6)
 
 p = tf4_1.add_paragraph()
-p.text = "Decomposes predicted return into exact basis-point contributions: Parkinson Volatility, RSI momentum, and ASPI relative alpha."
+p.text = "Calculates exact game-theoretic Shapley values directly across tree ensemble paths, decomposing predicted returns into basis-point impacts with 100% additivity verification in pytest."
 p.font.name = FONT_BODY
-p.font.size = Pt(13)
+p.font.size = Pt(12.5)
 p.font.color.rgb = COLOR_MUTED
 p.space_before = Pt(8)
 
-# Layer 2
-make_card(s4, Inches(0.7), Inches(6.5), Inches(7.1), Inches(2.6), COLOR_CYAN)
-tb4_2 = s4.shapes.add_textbox(Inches(0.9), Inches(6.65), Inches(6.7), Inches(2.3))
+# Card 2: Heuristic Validation Engine
+make_card(s4, Inches(0.7), Inches(6.1), Inches(7.1), Inches(2.8), COLOR_CYAN)
+tb4_2 = s4.shapes.add_textbox(Inches(0.9), Inches(6.25), Inches(6.7), Inches(2.5))
 tf4_2 = tb4_2.text_frame
 tf4_2.word_wrap = True
+
 p = tf4_2.paragraphs[0]
-p.text = "[ LAYER 2: DOMAIN HEURISTIC ALIGNMENT ]"
+p.text = "LAYER 2: DOMAIN HEURISTIC VALIDATION ENGINE"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_CYAN
 
-p = tf4_2.add_paragraph()
-p.text = "Trader Intuition Validation"
-p.font.name = FONT_TITLE
-p.font.size = Pt(18)
-p.font.bold = True
-p.font.color.rgb = COLOR_WHITE
-p.space_before = Pt(6)
+heuristics = [
+    ("SUPPORTING", "Setup confirms forecast (e.g. RSI momentum <70 without exhaustion)"),
+    ("REJECTING / RISK", "Warns of counter-trend risk (e.g. elevated Parkinson volatility)"),
+    ("NEUTRAL", "Stable baseline alignment (e.g. volume consolidation)"),
+]
+for h_name, h_desc in heuristics:
+    p = tf4_2.add_paragraph()
+    p.text = f"• {h_name}: {h_desc}"
+    p.font.name = FONT_BODY
+    p.font.size = Pt(12)
+    p.font.color.rgb = COLOR_WHITE
+    p.space_before = Pt(6)
 
-p = tf4_2.add_paragraph()
-p.text = "Cross-verifies setup across Wilder RSI, 20/50 SMA trend, Parkinson volatility, and Volume surge into Supporting, Risk, or Neutral badges."
-p.font.name = FONT_BODY
-p.font.size = Pt(13)
-p.font.color.rgb = COLOR_MUTED
-p.space_before = Pt(8)
-
+add_skill_pills(s4, Inches(0.7), Inches(9.2), ["TreeSHAP", "Local Feature Attribution", "Rule Engines", "XAI Pytest Additivity"])
 add_footer(s4, "Swipe >")
 
 
 # ==============================================================================
-# SLIDE 5: EMPIRICAL RESULTS & STACK
+# SLIDE 5: FULL-STACK CLOUD ARCHITECTURE & RESULTS
 # ==============================================================================
 s5 = prs.slides.add_slide(blank_layout)
 set_bg(s5)
 add_header(
     s5,
-    "[ 05 / RESULTS & STACK ]",
-    "Empirical Results & Live Architecture",
-    "Validated out-of-sample edge deployed on a zero-cost 100% free cloud architecture.",
+    "[ 05 / FULL-STACK CLOUD ARCHITECTURE ]",
+    "Production Serving & Empirical Results",
+    "Production-grade full-stack financial terminal deployed on a zero-cost automated cloud topology.",
 )
 
 # 3 Stat Cards
 stats = [
     ("58.3%", "DIRECTION ACCURACY", "+8.3% over Random Walk", COLOR_CYAN),
-    ("79.4%", "EMPIRICAL COVERAGE", "Inside P10-P90 Cone", COLOR_EMERALD),
+    ("79.4%", "EMPIRICAL COVERAGE", "Inside P10-P90 Envelope", COLOR_EMERALD),
     ("26+1", "EQUITIES + ASPI", "Automated Daily Sync", COLOR_PURPLE),
 ]
 for i, (val, label, sub, col) in enumerate(stats):
     left = Inches(0.7 + i * 2.45)
-    make_card(s5, left, Inches(3.6), Inches(2.2), Inches(2.3), col)
-    tb = s5.shapes.add_textbox(left + Inches(0.1), Inches(3.8), Inches(2.0), Inches(1.9))
+    make_card(s5, left, Inches(3.3), Inches(2.2), Inches(2.0), col)
+    tb = s5.shapes.add_textbox(left + Inches(0.1), Inches(3.45), Inches(2.0), Inches(1.7))
     tf = tb.text_frame
     tf.word_wrap = True
 
@@ -394,7 +430,7 @@ for i, (val, label, sub, col) in enumerate(stats):
     p2.alignment = PP_ALIGN.CENTER
     p2.text = label
     p2.font.name = FONT_MONO
-    p2.font.size = Pt(9.5)
+    p2.font.size = Pt(9)
     p2.font.bold = True
     p2.font.color.rgb = COLOR_WHITE
     p2.space_before = Pt(4)
@@ -403,37 +439,38 @@ for i, (val, label, sub, col) in enumerate(stats):
     p3.alignment = PP_ALIGN.CENTER
     p3.text = sub
     p3.font.name = FONT_BODY
-    p3.font.size = Pt(9.5)
+    p3.font.size = Pt(9)
     p3.font.color.rgb = COLOR_DIM
     p3.space_before = Pt(4)
 
 # Cloud Stack Card
-make_card(s5, Inches(0.7), Inches(6.2), Inches(7.1), Inches(2.9), COLOR_CYAN)
-tb5 = s5.shapes.add_textbox(Inches(0.9), Inches(6.35), Inches(6.7), Inches(2.6))
+make_card(s5, Inches(0.7), Inches(5.5), Inches(7.1), Inches(3.4), COLOR_CYAN)
+tb5 = s5.shapes.add_textbox(Inches(0.9), Inches(5.65), Inches(6.7), Inches(3.1))
 tf5 = tb5.text_frame
 tf5.word_wrap = True
 
 p = tf5.paragraphs[0]
-p.text = "[ ZERO-COST PRODUCTION STACK ]"
+p.text = "PRODUCTION CLOUD SERVING STACK"
 p.font.name = FONT_MONO
 p.font.size = Pt(11)
 p.font.bold = True
 p.font.color.rgb = COLOR_CYAN
 
-stack_lines = [
-    ("Frontend Terminal", "React 19 + TypeScript on Vercel Edge"),
-    ("Serving REST API", "FastAPI Container on Render"),
-    ("Cloud Database", "PostgreSQL 15 on Supabase"),
-    ("Post-Market Pipeline", "Automated Cron (15:00 SLST) on GitHub Actions"),
+stack_items = [
+    ("Frontend Terminal", "React 19 + TypeScript + TradingView Lightweight Charts on Vercel CDN"),
+    ("Serving REST API", "FastAPI in Docker container with OpenMP multiprocessing on Render"),
+    ("Cloud Database", "PostgreSQL 15 on Supabase (Composite PK idempotent daily upserts)"),
+    ("MLOps Automation", "GitHub Actions daily cron (15:00 SLST) + 29-test Pytest CI suite"),
 ]
-for comp, desc in stack_lines:
+for item_name, item_desc in stack_items:
     p = tf5.add_paragraph()
-    p.text = f"• {comp:<20} : {desc}"
-    p.font.name = FONT_MONO
-    p.font.size = Pt(11)
+    p.text = f"• {item_name}: {item_desc}"
+    p.font.name = FONT_BODY
+    p.font.size = Pt(11.5)
     p.font.color.rgb = COLOR_WHITE
     p.space_before = Pt(6)
 
+add_skill_pills(s5, Inches(0.7), Inches(9.2), ["FastAPI", "Docker", "PostgreSQL / Supabase", "React 19 + TypeScript", "GitHub Actions"])
 add_footer(s5, "[05 / 05]")
 
 # Save PPTX
