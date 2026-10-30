@@ -24,18 +24,18 @@ export const App: React.FC = () => {
         </main>
 
         {/* Persistent Terminal Footer */}
-        <footer className="border-t border-borderline py-5 px-6 bg-surface/50 text-xs font-mono text-muted flex flex-col sm:flex-row items-center justify-between gap-3 mt-12">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand" />
+        <footer className="border-t border-borderline py-5 px-4 sm:px-6 bg-surface/50 text-xs font-mono text-muted flex flex-col sm:flex-row items-center justify-between gap-3 mt-8 sm:mt-12 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className="w-2 h-2 rounded-full bg-brand shrink-0" />
             <span className="text-gray-300 font-semibold">
               CSE Market Intelligence Platform
             </span>
-            <span>&bull;</span>
+            <span className="hidden xs:inline">&bull;</span>
             <span>Colombo Stock Exchange</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>Purged Walk-Forward Cross-Validation (30d Embargo)</span>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-[10px] sm:text-[11px]">
+            <span>Purged Walk-Forward CV (30d Embargo)</span>
             <span>&bull;</span>
             <span>Multi-Quantile LightGBM</span>
             <span>&bull;</span>

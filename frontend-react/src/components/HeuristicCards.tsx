@@ -88,9 +88,9 @@ export const HeuristicCards: React.FC<HeuristicCardsProps> = ({
   return (
     <div className="flex flex-col gap-5">
       {/* Engine Synthesis Bar */}
-      <div className="flex flex-wrap items-center justify-between p-4 bg-surface border border-borderline rounded-xl gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-brand/10 border border-brand/20 text-brand">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl gap-3 sm:gap-4">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="p-2 rounded-lg bg-brand/10 border border-brand/20 text-brand shrink-0">
             <Layers className="w-5 h-5" />
           </div>
           <div>
@@ -103,21 +103,21 @@ export const HeuristicCards: React.FC<HeuristicCardsProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-mono">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
+          <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
             <span className="text-muted">Supporting:</span>
             <span className="text-emerald-400 font-bold">{supportingCount}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
-            <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="text-muted">Risk Warnings:</span>
+          <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
+            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
+            <span className="text-muted">Risk:</span>
             <span className="text-rose-400 font-bold">{riskCount}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
-            <span className="w-2 h-2 rounded-full bg-slate-400" />
+          <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-subsurface border border-borderline">
+            <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
             <span className="text-muted">Neutral:</span>
             <span className="text-slate-300 font-bold">{neutralCount}</span>
           </div>

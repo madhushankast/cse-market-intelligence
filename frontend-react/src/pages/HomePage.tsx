@@ -17,30 +17,30 @@ import {
 
 export const HomePage: React.FC = () => {
   return (
-    <div className="flex flex-col gap-12 py-6 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex flex-col gap-8 sm:gap-12 py-4 sm:py-6 max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8">
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl border border-borderline bg-gradient-to-b from-surface via-surface to-canvas p-8 sm:p-12 shadow-2xl">
+      <section className="relative overflow-hidden rounded-2xl border border-borderline bg-gradient-to-b from-surface via-surface to-canvas p-5 sm:p-8 lg:p-12 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand font-mono text-xs mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>INSTITUTIONAL QUANTITATIVE SERVING ENGINE</span>
+          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand font-mono text-[10px] sm:text-xs mb-3 sm:mb-4">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">INSTITUTIONAL QUANTITATIVE SERVING ENGINE</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-100 font-sans leading-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-100 font-sans leading-tight">
             Colombo Stock Exchange (CSE) Quantitative Intelligence Platform
           </h1>
 
-          <p className="mt-4 text-base sm:text-lg text-gray-300 leading-relaxed font-sans">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-gray-300 leading-relaxed font-sans">
             An end-to-end MLOps forecasting engine leveraging Multi-Quantile LightGBM, TreeSHAP
             mathematical attribution, and purged walk-forward cross-validation on frontier equity
             time series.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <Link
               to="/terminal"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-sky-400 text-gray-950 font-semibold text-sm transition-all shadow-lg shadow-brand/20 hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-sky-400 text-gray-950 font-semibold text-sm transition-all shadow-lg shadow-brand/20 hover:scale-[1.02]"
             >
               <TrendingUp className="w-4 h-4" />
               <span>Launch Trading Terminal</span>
@@ -49,7 +49,7 @@ export const HomePage: React.FC = () => {
 
             <Link
               to="/benchmarks"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-subsurface hover:bg-borderline border border-borderline text-gray-200 font-semibold text-sm transition-all hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-subsurface hover:bg-borderline border border-borderline text-gray-200 font-semibold text-sm transition-all hover:scale-[1.02]"
             >
               <Award className="w-4 h-4 text-brand" />
               <span>View Model Benchmarks</span>
@@ -246,12 +246,12 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 4. How to Read the Terminal */}
-      <section className="p-8 rounded-2xl bg-surface border border-borderline shadow-xl flex flex-col gap-6">
+      <section className="p-5 sm:p-8 rounded-2xl bg-surface border border-borderline shadow-xl flex flex-col gap-5 sm:gap-6">
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-brand font-semibold">
             USER GUIDE
           </span>
-          <h2 className="text-2xl font-bold text-gray-100 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mt-1">
             How to Interpret the Trading Terminal
           </h2>
           <p className="text-xs text-muted mt-1 font-sans">

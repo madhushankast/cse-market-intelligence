@@ -76,15 +76,15 @@ export const BenchmarksPage: React.FC = () => {
       : 0.1359;
 
   return (
-    <div className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-8">
+    <div className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-6 sm:gap-8">
       {/* Page Title & Intro */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 text-xs font-mono text-brand mb-1">
-            <Award className="w-4 h-4" />
+            <Award className="w-4 h-4 shrink-0" />
             <span>EMPIRICAL VALIDATION & BENCHMARK LADDER</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-100 font-sans tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-100 font-sans tracking-tight">
             Purged Walk-Forward Cross-Validation Performance
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 mt-1 font-sans">
@@ -107,101 +107,101 @@ export const BenchmarksPage: React.FC = () => {
       </div>
 
       {/* Aggregate KPI Ribbon */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {/* KPI 1: Mean Directional Accuracy */}
-        <div className="p-4 bg-surface border border-brand/40 rounded-xl flex flex-col justify-between shadow-xl relative overflow-hidden">
+        <div className="col-span-2 sm:col-span-2 lg:col-span-1 p-3.5 sm:p-4 bg-surface border border-brand/40 rounded-xl flex flex-col justify-between shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-20 h-20 bg-brand/5 rounded-full blur-xl pointer-events-none" />
-          <span className="text-xs uppercase font-mono tracking-wider text-brand font-semibold">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-brand font-semibold">
             LightGBM Directional Acc
           </span>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold font-mono text-brand">
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-brand">
               {avgLgbAcc.toFixed(1)}%
             </div>
-            <div className="text-[11px] font-mono text-emerald-400 mt-1">
+            <div className="text-[10px] sm:text-[11px] font-mono text-emerald-400 mt-1">
               +{avgEdge.toFixed(1)}% edge vs 50% Naive Walk
             </div>
           </div>
-          <div className="text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
+          <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
             Market-wide average (26 stocks)
           </div>
         </div>
 
         {/* KPI 2: Naive Hit Rate */}
-        <div className="p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
-          <span className="text-xs uppercase font-mono tracking-wider text-muted">
-            Naive Random Walk Hit Ratio
+        <div className="p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-muted">
+            Naive Walk Hit Ratio
           </span>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold font-mono text-gray-200">
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-gray-200">
               50.00%
             </div>
-            <div className="text-[11px] font-mono text-muted mt-1">
-              Prophet Baseline: {avgProphetAcc.toFixed(1)}%
+            <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-1">
+              Prophet: {avgProphetAcc.toFixed(1)}%
             </div>
           </div>
-          <div className="text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
-            Level 0 persistence baseline
+          <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
+            Level 0 baseline
           </div>
         </div>
 
         {/* KPI 3: 80% Coverage */}
-        <div className="p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
-          <span className="text-xs uppercase font-mono tracking-wider text-emerald-400">
-            Empirical 80% CI Coverage
+        <div className="p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-emerald-400">
+            80% CI Coverage
           </span>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold font-mono text-emerald-400">
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-400">
               {avgCoverage.toFixed(1)}%
             </div>
-            <div className="text-[11px] font-mono text-muted mt-1">
-              P10 to P90 interval capture
+            <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-1">
+              P10–P90 capture
             </div>
           </div>
-          <div className="text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
-            Well-calibrated uncertainty cone
+          <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
+            Calibrated cone
           </div>
         </div>
 
         {/* KPI 4: Mean Pinball Loss */}
-        <div className="p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
-          <span className="text-xs uppercase font-mono tracking-wider text-muted">
-            Mean Quantile Pinball Loss
+        <div className="p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-muted">
+            Mean Pinball Loss
           </span>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold font-mono text-gray-200">
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-gray-200">
               {avgPinball.toFixed(4)}
             </div>
-            <div className="text-[11px] font-mono text-muted mt-1">
-              Asymmetric quantile calibration
+            <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-1">
+              Quantile calibration
             </div>
           </div>
-          <div className="text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
-            P10, P50, and P90 loss penalty
+          <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
+            P10, P50, P90 loss
           </div>
         </div>
 
         {/* KPI 5: Model RMSE */}
-        <div className="p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
-          <span className="text-xs uppercase font-mono tracking-wider text-muted">
-            Test Root Mean Square Error
+        <div className="p-3.5 sm:p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between shadow-lg">
+          <span className="text-[11px] sm:text-xs uppercase font-mono tracking-wider text-muted">
+            Test Return RMSE
           </span>
           <div className="mt-2">
-            <div className="text-3xl font-extrabold font-mono text-gray-200">
+            <div className="text-2xl sm:text-3xl font-extrabold font-mono text-gray-200">
               {avgRmse.toFixed(4)}
             </div>
-            <div className="text-[11px] font-mono text-muted mt-1">
-              Stationary 30-day log return RMSE
+            <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-1">
+              30-day log return
             </div>
           </div>
-          <div className="text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
-            Zero lookahead leakage
+          <div className="text-[10px] sm:text-[11px] font-mono text-muted mt-2 pt-2 border-t border-borderline/60">
+            Zero leakage
           </div>
         </div>
       </div>
 
       {/* Cross-Validation Methodology Callout Banner */}
-      <div className="p-6 rounded-2xl bg-surface border border-borderline shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="p-4 sm:p-6 rounded-2xl bg-surface border border-borderline shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-1">
             <ShieldCheck className="w-4 h-4" />
@@ -235,7 +235,7 @@ export const BenchmarksPage: React.FC = () => {
       </div>
 
       {/* Interactive Benchmark Table */}
-      <div className="flex flex-col gap-4 bg-surface border border-borderline rounded-2xl p-5 shadow-2xl">
+      <div className="flex flex-col gap-4 bg-surface border border-borderline rounded-2xl p-3.5 sm:p-5 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-gray-100">

@@ -47,10 +47,10 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
   return (
     <div className="flex flex-col gap-6">
       {/* Shapley Additive Identity Formula Banner */}
-      <div className="p-5 bg-surface border border-borderline rounded-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 bg-surface border border-borderline rounded-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-brand mb-1">
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 shrink-0" />
             <span>EXACT SHAPLEY ADDITIVITY PRINCIPLE</span>
           </div>
           <h3 className="text-base font-semibold text-gray-100 font-mono tracking-tight">
@@ -62,8 +62,8 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
         </div>
 
         {/* Breakdown Values */}
-        <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <div className="px-3.5 py-2 rounded-lg bg-subsurface border border-borderline">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
+          <div className="px-2.5 sm:px-3.5 py-2 rounded-lg bg-subsurface border border-borderline">
             <span className="text-muted block text-[10px] uppercase">Base Value (φ₀)</span>
             <span className="font-bold text-gray-200">
               {(base_value * 100).toFixed(2)}%
@@ -72,7 +72,7 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
 
           <span className="text-muted font-bold">+</span>
 
-          <div className="px-3.5 py-2 rounded-lg bg-subsurface border border-borderline">
+          <div className="px-2.5 sm:px-3.5 py-2 rounded-lg bg-subsurface border border-borderline">
             <span className="text-muted block text-[10px] uppercase">Net Drivers (Σ φᵢ)</span>
             <span
               className={`font-bold ${
@@ -86,7 +86,7 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
 
           <span className="text-muted font-bold">=</span>
 
-          <div className="px-3.5 py-2 rounded-lg bg-brand/10 border border-brand/30">
+          <div className="px-2.5 sm:px-3.5 py-2 rounded-lg bg-brand/10 border border-brand/30">
             <span className="text-brand block text-[10px] uppercase">P50 Return (ŷ)</span>
             <span className="font-bold text-brand">
               {(predicted_return * 100).toFixed(2)}%
@@ -96,8 +96,8 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
       </div>
 
       {/* Waterfall Horizontal Bar Chart */}
-      <div className="p-5 bg-surface border border-borderline rounded-xl shadow-xl">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-4 sm:p-5 bg-surface border border-borderline rounded-xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h4 className="text-sm font-semibold text-gray-200">
               Top Mathematical Feature Drivers (SHAP Attribution)
@@ -108,17 +108,18 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
           </div>
           <div className="flex items-center gap-3 text-xs font-mono">
             <span className="flex items-center gap-1.5 text-bullish">
-              <span className="w-2.5 h-2.5 rounded bg-bullish inline-block" />
+              <span className="w-2.5 h-2.5 rounded bg-bullish inline-block shrink-0" />
               Positive Lift
             </span>
             <span className="flex items-center gap-1.5 text-bearish">
-              <span className="w-2.5 h-2.5 rounded bg-bearish inline-block" />
+              <span className="w-2.5 h-2.5 rounded bg-bearish inline-block shrink-0" />
               Negative Drag
             </span>
           </div>
         </div>
 
-        <div className="h-[360px] w-full">
+        {/* Desktop / Tablet Recharts Waterfall */}
+        <div className="hidden sm:block h-[360px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               layout="vertical"
@@ -177,6 +178,37 @@ export const ShapDrivers: React.FC<ShapDriversProps> = ({ shapExplanation }) => 
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* Mobile Compact Attribution Bars */}
+        <div className="sm:hidden flex flex-col gap-2.5">
+          {(() => {
+            const maxAbs = Math.max(...allDrivers.map((d) => Math.abs(d.shap_impact)), 0.001);
+            return allDrivers.map((driver, idx) => {
+              const isPos = driver.shap_impact >= 0;
+              const pctWidth = Math.min(100, Math.max(6, (Math.abs(driver.shap_impact) / maxAbs) * 100));
+              return (
+                <div
+                  key={idx}
+                  className="p-2.5 rounded-lg bg-subsurface/60 border border-borderline/60 flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-gray-200 font-medium truncate">{driver.displayName}</span>
+                    <span className={`font-mono font-bold shrink-0 ${isPos ? 'text-bullish' : 'text-bearish'}`}>
+                      {isPos ? '+' : ''}
+                      {(driver.shap_impact * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-canvas rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${isPos ? 'bg-bullish' : 'bg-bearish'}`}
+                      style={{ width: `${pctWidth}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
 

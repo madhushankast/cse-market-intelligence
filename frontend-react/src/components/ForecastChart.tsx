@@ -226,21 +226,21 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ prediction }) => {
   return (
     <div className="flex flex-col h-full w-full bg-surface border border-borderline rounded-xl overflow-hidden shadow-2xl">
       {/* Chart Top Bar & Legend */}
-      <div className="flex flex-wrap items-center justify-between px-5 py-3 border-b border-borderline bg-surface/80 backdrop-blur gap-3">
-        <div className="flex items-center space-x-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-3.5 sm:px-5 py-2.5 sm:py-3 border-b border-borderline bg-surface/80 backdrop-blur gap-2 sm:gap-3">
+        <div className="flex items-center justify-between sm:justify-start space-x-3">
           <span className="text-xs font-mono uppercase tracking-wider text-muted font-semibold">
             Forecast Cone
           </span>
-          <span className="text-xs px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-mono">
+          <span className="text-[11px] sm:text-xs px-2 py-0.5 rounded bg-brand/10 text-brand border border-brand/20 font-mono">
             30-Trading-Day Horizon
           </span>
         </div>
 
         {/* Dynamic Legend / Cursor Tooltip */}
-        <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 bg-[#58a6ff] rounded-full inline-block" />
-            <span className="text-muted">Hist Close:</span>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-x-3 gap-y-1 sm:gap-4 text-[11px] sm:text-xs font-mono">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-2.5 h-0.5 bg-[#58a6ff] rounded-full inline-block shrink-0" />
+            <span className="text-muted">Close:</span>
             <span className="text-gray-200 font-semibold">
               {hoverInfo.close !== undefined
                 ? `LKR ${hoverInfo.close.toFixed(2)}`
@@ -248,9 +248,9 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ prediction }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 bg-[#3fb950] border-t border-dashed border-[#3fb950] inline-block" />
-            <span className="text-muted">P90 Ceiling:</span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-2.5 h-0.5 bg-[#3fb950] border-t border-dashed border-[#3fb950] inline-block shrink-0" />
+            <span className="text-muted">P90:</span>
             <span className="text-bullish font-semibold">
               {hoverInfo.p90 !== undefined
                 ? `LKR ${hoverInfo.p90.toFixed(2)}`
@@ -258,9 +258,9 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ prediction }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-1 bg-[#38bdf8] rounded-full inline-block" />
-            <span className="text-muted">P50 Median:</span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-2.5 h-1 bg-[#38bdf8] rounded-full inline-block shrink-0" />
+            <span className="text-muted">P50:</span>
             <span className="text-[#38bdf8] font-bold">
               {hoverInfo.p50 !== undefined
                 ? `LKR ${hoverInfo.p50.toFixed(2)}`
@@ -268,9 +268,9 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ prediction }) => {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-0.5 bg-[#f85149] border-t border-dashed border-[#f85149] inline-block" />
-            <span className="text-muted">P10 Floor (VaR 90%):</span>
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-2.5 h-0.5 bg-[#f85149] border-t border-dashed border-[#f85149] inline-block shrink-0" />
+            <span className="text-muted">P10:</span>
             <span className="text-bearish font-semibold">
               {hoverInfo.p10 !== undefined
                 ? `LKR ${hoverInfo.p10.toFixed(2)}`
@@ -283,7 +283,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ prediction }) => {
       {/* Chart Canvas */}
       <div
         ref={chartContainerRef}
-        className="w-full flex-1 min-h-[440px] relative"
+        className="w-full flex-1 min-h-[280px] sm:min-h-[420px] relative"
       />
     </div>
   );
