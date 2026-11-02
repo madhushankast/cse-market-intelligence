@@ -6,9 +6,12 @@ on:
     - cron: '30 9 * * 1-5'
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   daily-mlops-job:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,8 +40,11 @@ jobs:
           python scripts/daily_pipeline_job.py
 
       - name: Trigger Render Deployment (Optional)
-        if: env.RENDER_DEPLOY_HOOK != ''
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          curl -X POST "$RENDER_DEPLOY_HOOK"
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            curl -fsSL -X POST "$RENDER_DEPLOY_HOOK"
+          else
+            echo "RENDER_DEPLOY_HOOK not configured; skipping webhook trigger."
+          fi

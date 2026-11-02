@@ -25,7 +25,7 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from src.database.session import engine, SessionLocal
+from src.database.session import Base, engine, SessionLocal
 from src.database.models import StockPrice, ASPIIndex, PipelineRun
 from src.ingestion.cse_scraper import CSEScraper
 
@@ -163,6 +163,7 @@ class DailyCSESyncService:
         session = self.get_session()
 
         try:
+            Base.metadata.create_all(bind=engine)
             # 1. Sync ASPI
             aspi_ok, aspi_val, aspi_msg = self.sync_aspi_index(session)
 

@@ -37,9 +37,10 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from src.database.session import engine, SessionLocal
+from src.database.session import Base, engine, SessionLocal
 from src.database.models import StockPrice, ASPIIndex, ForecastPrediction, PipelineRun
 from src.ingestion.daily_sync import sync_daily_cse_market, upsert_records_chunked
+from scripts.backfill_postgres import run_database_backfill
 from src.features.technical_features import TechnicalFeaturePipeline
 from src.modeling.train_lightgbm import QuantileLightGBMTrainer
 from src.modeling.predict import ForecastPipeline
@@ -75,6 +76,16 @@ def run_daily_pipeline(
     predictions_stored = 0
 
     try:
+        # Ensure database schema exists (essential on ephemeral runners / SQLite fallback)
+        Base.metadata.create_all(bind=engine)
+
+        # Auto-seed historical baseline from data/processed/*.parquet if DB is empty
+        existing_aspi_count = session.query(ASPIIndex).count()
+        existing_stock_count = session.query(StockPrice).count()
+        if existing_aspi_count == 0 or existing_stock_count < 1000:
+            print("\n[INIT] Database has insufficient baseline history. Seeding from data/processed/*.parquet...")
+            run_database_backfill(processed_dir=Path("data/processed"))
+
         # -------------------------------------------------------------
         # STAGE 1: Daily CSE Market Ingestion
         # -------------------------------------------------------------
