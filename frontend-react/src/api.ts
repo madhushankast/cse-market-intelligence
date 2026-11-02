@@ -304,6 +304,10 @@ export interface PipelineStatusData {
     latest_market_date: string | null;
     latest_equity_date: string | null;
     oldest_equity_date: string | null;
+    database_engine?: string;
+    db_stock_bars?: number;
+    db_aspi_bars?: number;
+    db_predictions_count?: number;
   };
   aspi: {
     symbol: string;

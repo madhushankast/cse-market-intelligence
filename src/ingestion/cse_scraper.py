@@ -69,9 +69,9 @@ class CSEScraper:
             return f"{symbol}.N0000"
         return symbol
 
-    def get_stock_id(self, symbol: str) -> Optional[int]:
+    def get_symbol_info(self, symbol: str) -> Dict[str, Any]:
         """
-        Query companyInfoSummery to retrieve internal integer stock ID.
+        Query companyInfoSummery to retrieve full symbol metadata and today's live session bar.
         """
         formatted = self.normalize_symbol(symbol)
         url = f"{self.base_url}/companyInfoSummery"
@@ -81,14 +81,21 @@ class CSEScraper:
             resp = self.session.post(url, data=payload, timeout=self.timeout)
             resp.raise_for_status()
             data = resp.json()
-            stock_id = data.get("reqSymbolInfo", {}).get("id")
-            if stock_id is not None:
-                return int(stock_id)
-            logger.warning("No stock ID found in CSE response for %s", formatted)
-            return None
+            return data.get("reqSymbolInfo") or {}
         except Exception as exc:
-            logger.error("Failed to fetch stock ID for %s: %s", formatted, exc)
-            return None
+            logger.error("Failed to fetch symbol info for %s: %s", formatted, exc)
+            return {}
+
+    def get_stock_id(self, symbol: str) -> Optional[int]:
+        """
+        Query companyInfoSummery to retrieve internal integer stock ID.
+        """
+        info = self.get_symbol_info(symbol)
+        stock_id = info.get("id")
+        if stock_id is not None:
+            return int(stock_id)
+        logger.warning("No stock ID found in CSE response for %s", self.normalize_symbol(symbol))
+        return None
 
     def fetch_chart_data(self, stock_id: int, period: str = "5") -> List[Dict[str, Any]]:
         """
@@ -151,15 +158,43 @@ class CSEScraper:
 
     def pull_latest_ohlcv(self, symbol: str, period: str = "3") -> pd.DataFrame:
         """
-        Orchestrates symbol resolution, API querying, and OHLCV parsing.
+        Orchestrates symbol resolution, API querying, OHLCV parsing, and merges
+        today's active/closing session bar from `companyInfoSummery` when available.
         """
-        stock_id = self.get_stock_id(symbol)
+        norm_sym = self.normalize_symbol(symbol)
+        info = self.get_symbol_info(norm_sym)
+        stock_id = info.get("id")
         if stock_id is None:
             logger.warning("Could not resolve stockId for symbol %s via CSE API", symbol)
             return pd.DataFrame(columns=["date", "symbol", "open", "high", "low", "close", "volume"])
 
-        raw_points = self.fetch_chart_data(stock_id, period=period)
-        return self.parse_chart_data(symbol, raw_points)
+        raw_points = self.fetch_chart_data(int(stock_id), period=period)
+        df = self.parse_chart_data(norm_sym, raw_points)
+
+        # Also extract today's session OHLCV from reqSymbolInfo if trades occurred today
+        last_price = info.get("lastTradedPrice") or info.get("closingPrice")
+        today_vol = info.get("tdyShareVolume")
+        if last_price and float(last_price) > 0 and today_vol and int(today_vol) > 0:
+            sl_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+            today_sl = datetime.datetime.now(sl_tz).date()
+            if today_sl.weekday() < 5:
+                close_v = float(last_price)
+                open_v = float(info.get("previousClose") or close_v)
+                high_v = float(info.get("hiTrade") or max(open_v, close_v))
+                low_v = float(info.get("lowTrade") or min(open_v, close_v))
+                live_row = pd.DataFrame([{
+                    "date": pd.to_datetime(today_sl),
+                    "symbol": norm_sym,
+                    "open": open_v,
+                    "high": max(high_v, open_v, close_v),
+                    "low": min(low_v, open_v, close_v),
+                    "close": close_v,
+                    "volume": int(today_vol),
+                }])
+                df = pd.concat([df, live_row], ignore_index=True)
+                df = df.sort_values("date").drop_duplicates(subset=["date", "symbol"], keep="last").reset_index(drop=True)
+
+        return df
 
     def fetch_aspi_daily(self) -> Optional[Dict[str, Any]]:
         """

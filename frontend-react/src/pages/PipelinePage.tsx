@@ -211,7 +211,7 @@ export const PipelinePage: React.FC = () => {
 
         <div className="p-4 bg-surface border border-borderline rounded-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs font-mono text-muted uppercase">
-            <span>Total Stored Bars</span>
+            <span>Database Storage</span>
             <Database className="w-4 h-4 text-brand" />
           </div>
           <div className="mt-2">
@@ -219,7 +219,8 @@ export const PipelinePage: React.FC = () => {
               {statusData ? statusData.summary.total_bars.toLocaleString() : '—'}
             </div>
             <div className="text-[11px] font-mono text-muted mt-1">
-              Across {statusData?.summary.total_equities || 26} CSE equities + ASPI
+              {statusData?.summary.database_engine || 'Database'} •{' '}
+              {statusData?.summary.db_predictions_count ?? 26} Forecasts Stored
             </div>
           </div>
         </div>

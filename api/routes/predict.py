@@ -298,15 +298,26 @@ def get_pipeline_status():
             except Exception as exc:
                 logger.warning("Could not inspect parquet for %s: %s", symbol, exc)
 
-    # 3. Query recent pipeline runs from database
+    # 3. Query database row counts & recent pipeline runs
     recent_runs = []
+    db_engine_label = "SQLite Local"
+    db_stock_count = 0
+    db_aspi_count = 0
+    db_predictions_count = 0
     try:
+        from sqlalchemy import func
         from src.database.session import Base, engine, SessionLocal
-        from src.database.models import PipelineRun
+        from src.database.models import PipelineRun, StockPrice, ASPIIndex, ForecastPrediction
 
+        if engine.dialect.name == "postgresql":
+            db_engine_label = "Supabase PostgreSQL"
         Base.metadata.create_all(bind=engine)
         session = SessionLocal()
         try:
+            db_stock_count = int(session.query(func.count(StockPrice.symbol)).scalar() or 0)
+            db_aspi_count = int(session.query(func.count(ASPIIndex.date)).scalar() or 0)
+            db_predictions_count = int(session.query(func.count(ForecastPrediction.id)).scalar() or 0)
+
             rows = (
                 session.query(PipelineRun)
                 .order_by(PipelineRun.id.desc())
@@ -341,10 +352,14 @@ def get_pipeline_status():
             "summary": {
                 "total_equities": len(equities),
                 "trained_models_count": trained_models_count,
-                "total_bars": total_bars + int(aspi_info["total_rows"] or 0),
+                "total_bars": max(total_bars + int(aspi_info["total_rows"] or 0), db_stock_count + db_aspi_count),
                 "latest_market_date": aspi_info["latest_date"] or max_equity_date,
                 "latest_equity_date": max_equity_date,
                 "oldest_equity_date": min_equity_date,
+                "database_engine": db_engine_label,
+                "db_stock_bars": db_stock_count,
+                "db_aspi_bars": db_aspi_count,
+                "db_predictions_count": db_predictions_count,
             },
             "aspi": aspi_info,
             "equities": equities,

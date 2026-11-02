@@ -25,12 +25,14 @@ if env_file.exists():
 else:
     load_dotenv()
 
+
 def _sanitize_database_url(raw_val: str | None) -> str:
     """
     Sanitizes DATABASE_URL from environment or GitHub Secrets, handling:
       - Leading/trailing whitespace, newlines, or quotes
       - Accidental 'DATABASE_URL=' key prefix or multi-line .env paste
       - 'postgres://' -> 'postgresql+psycopg2://' normalization
+      - Supabase IPv4 Supavisor pooler cluster host normalization
     """
     if not raw_val:
         return ""
@@ -51,6 +53,26 @@ def _sanitize_database_url(raw_val: str | None) -> str:
         cleaned = cleaned.replace("postgres://", "postgresql+psycopg2://", 1)
     elif cleaned.startswith("postgresql://"):
         cleaned = cleaned.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    # Fix Supabase pooler cluster host (aws-0 -> aws-1 for esbatexazekwprxxrckh)
+    if "esbatexazekwprxxrckh" in cleaned:
+        cleaned = cleaned.replace(
+            "aws-0-eu-central-1.pooler.supabase.com",
+            "aws-1-eu-central-1.pooler.supabase.com",
+        )
+        # Convert IPv6-only direct host db.<ref>.supabase.co:5432 to IPv4 Supavisor pooler
+        if "@db.esbatexazekwprxxrckh.supabase.co" in cleaned:
+            cleaned = (
+                cleaned.replace("://postgres:", "://postgres.esbatexazekwprxxrckh:")
+                .replace(
+                    "@db.esbatexazekwprxxrckh.supabase.co:5432/",
+                    "@aws-1-eu-central-1.pooler.supabase.com:6543/",
+                )
+                .replace(
+                    "@db.esbatexazekwprxxrckh.supabase.co/",
+                    "@aws-1-eu-central-1.pooler.supabase.com:6543/",
+                )
+            )
     return cleaned
 
 
@@ -80,11 +102,14 @@ try:
             pool_size=10,
             max_overflow=20,
             pool_pre_ping=True,
-            connect_args={"connect_timeout": 3},
+            connect_args={"connect_timeout": 5},
         )
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        logger.info("Connected successfully to PostgreSQL database: %s", DATABASE_URL.split("@")[-1])
+        logger.info(
+            "Connected successfully to PostgreSQL database: %s",
+            DATABASE_URL.split("@")[-1],
+        )
     else:
         engine = create_engine(
             DATABASE_URL,
