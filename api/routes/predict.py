@@ -217,26 +217,169 @@ def get_prediction_history(symbol: str, limit: int = 30):
         session.close()
 
 
+class PipelineTriggerRequest(BaseModel):
+    symbols: Optional[List[str]] = Field(default=None, description="Optional list of symbols to sync/retrain (None = all 26 equities)")
+    sync_live: bool = Field(default=True, description="Fetch latest EOD bars from official CSE API")
+    retrain: bool = Field(default=False, description="Whether to retrain LightGBM quantile models on expanded history")
+
+
+@router.get("/pipeline/status", summary="Get Dataset Freshness, Last Updated Dates, and Pipeline Audit Log")
+def get_pipeline_status():
+    """
+    Returns exact data freshness dates (start date, latest updated date, total trading days)
+    for ASPI and all 26 CSE equities, plus recent execution audit logs from `pipeline_runs`.
+    """
+    processed_dir = Path("data/processed")
+    models_dir = Path("models")
+    meta_map = _load_tickers_metadata()
+
+    # 1. Inspect ASPI benchmark parquet
+    aspi_info = {
+        "symbol": "ASPI",
+        "name": "All Share Price Index (CSE Benchmark)",
+        "min_date": None,
+        "latest_date": None,
+        "total_rows": 0,
+        "latest_close": None,
+    }
+    aspi_path = processed_dir / "ASPI.parquet"
+    if aspi_path.exists():
+        try:
+            aspi_df = pd.read_parquet(aspi_path)
+            if not aspi_df.empty:
+                dates = pd.to_datetime(aspi_df["date"])
+                aspi_info["min_date"] = str(dates.min().date())
+                aspi_info["latest_date"] = str(dates.max().date())
+                aspi_info["total_rows"] = int(len(aspi_df))
+                aspi_info["latest_close"] = round(float(aspi_df["close"].iloc[-1]), 2)
+        except Exception as exc:
+            logger.warning("Could not inspect ASPI.parquet: %s", exc)
+
+    # 2. Inspect all 26 equities parquets & model artifacts
+    equities = []
+    total_bars = 0
+    trained_models_count = 0
+    latest_equity_dates = []
+
+    if processed_dir.exists():
+        for pf in sorted(processed_dir.glob("*.parquet")):
+            symbol = pf.stem
+            if symbol == "ASPI":
+                continue
+            try:
+                df = pd.read_parquet(pf, columns=["date", "close", "volume"])
+                if df.empty:
+                    continue
+                dates = pd.to_datetime(df["date"])
+                min_d = str(dates.min().date())
+                max_d = str(dates.max().date())
+                latest_equity_dates.append(max_d)
+                row_count = int(len(df))
+                total_bars += row_count
+
+                latest = df.iloc[-1]
+                meta = meta_map.get(symbol, {})
+                model_exists = (models_dir / symbol / "models.pkl").exists()
+                if model_exists:
+                    trained_models_count += 1
+
+                equities.append({
+                    "symbol": symbol,
+                    "code": meta.get("code", symbol.split("_")[0]),
+                    "name": meta.get("name", symbol.split("_")[0] + " PLC"),
+                    "sector": meta.get("sector", "Equities"),
+                    "min_date": min_d,
+                    "latest_date": max_d,
+                    "total_rows": row_count,
+                    "latest_close": round(float(latest["close"]), 2),
+                    "latest_volume": int(latest["volume"]),
+                    "model_trained": model_exists,
+                })
+            except Exception as exc:
+                logger.warning("Could not inspect parquet for %s: %s", symbol, exc)
+
+    # 3. Query recent pipeline runs from database
+    recent_runs = []
+    try:
+        from src.database.session import Base, engine, SessionLocal
+        from src.database.models import PipelineRun
+
+        Base.metadata.create_all(bind=engine)
+        session = SessionLocal()
+        try:
+            rows = (
+                session.query(PipelineRun)
+                .order_by(PipelineRun.id.desc())
+                .limit(10)
+                .all()
+            )
+            recent_runs = [
+                {
+                    "id": r.id,
+                    "run_date": str(r.run_date),
+                    "job_name": r.job_name,
+                    "status": r.status,
+                    "records_ingested": int(r.records_ingested or 0),
+                    "models_retrained": int(r.models_retrained or 0),
+                    "duration_seconds": float(r.duration_seconds or 0.0),
+                    "message": r.message or "",
+                    "created_at": str(r.created_at) if r.created_at else str(r.run_date),
+                }
+                for r in rows
+            ]
+        finally:
+            session.close()
+    except Exception as exc:
+        logger.warning("Could not query pipeline_runs: %s", exc)
+
+    max_equity_date = max(latest_equity_dates) if latest_equity_dates else None
+    min_equity_date = min(latest_equity_dates) if latest_equity_dates else None
+
+    return {
+        "status": "success",
+        "data": {
+            "summary": {
+                "total_equities": len(equities),
+                "trained_models_count": trained_models_count,
+                "total_bars": total_bars + int(aspi_info["total_rows"] or 0),
+                "latest_market_date": aspi_info["latest_date"] or max_equity_date,
+                "latest_equity_date": max_equity_date,
+                "oldest_equity_date": min_equity_date,
+            },
+            "aspi": aspi_info,
+            "equities": equities,
+            "recent_runs": recent_runs,
+        },
+    }
+
+
 @router.post("/pipeline/trigger", summary="Trigger Automated Ingestion, Retraining, and Prediction")
 def trigger_daily_pipeline(
+    request: Optional[PipelineTriggerRequest] = None,
     symbols: Optional[List[str]] = Query(default=None),
     sync_live: bool = Query(default=True),
     retrain: bool = Query(default=False),
 ):
     """
-    Manually triggers the daily ingestion, expanding model retraining, and forecast generation job.
+    Manually triggers the daily ingestion, optional model retraining, and forecast generation job,
+    then clears the in-memory ModelRegistryService cache so updated dates and prices take effect immediately.
     """
     from scripts.daily_pipeline_job import run_daily_pipeline
 
+    target_symbols = request.symbols if (request and request.symbols) else symbols
+    do_sync = request.sync_live if request is not None else sync_live
+    do_retrain = request.retrain if request is not None else retrain
+
     try:
         res = run_daily_pipeline(
-            symbols=symbols,
-            sync_live=sync_live,
-            retrain=retrain,
+            symbols=target_symbols,
+            sync_live=do_sync,
+            retrain=do_retrain,
         )
+        registry_service.clear_cache()
         return {
             "status": "success",
-            "message": "Pipeline execution triggered successfully",
+            "message": "Pipeline execution completed and model cache refreshed.",
             "result": res,
         }
     except Exception as exc:

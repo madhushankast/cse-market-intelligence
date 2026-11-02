@@ -112,6 +112,24 @@ class DailyCSESyncService:
             }
 
             upsert_records_chunked(session, ASPIIndex, [record], conflict_keys=["date"])
+
+            # Also keep data/processed/ASPI.parquet synchronized
+            aspi_file = Path("data/processed/ASPI.parquet")
+            if aspi_file.exists():
+                try:
+                    existing_aspi = pd.read_parquet(aspi_file)
+                    existing_aspi["date"] = pd.to_datetime(existing_aspi["date"])
+                    new_row = pd.DataFrame([{
+                        "date": pd.to_datetime(today_date),
+                        "symbol": "ASPI",
+                        "close": current_val,
+                    }])
+                    combined_aspi = pd.concat([existing_aspi, new_row], ignore_index=True)
+                    combined_aspi = combined_aspi.sort_values("date").drop_duplicates(subset=["date"], keep="last").reset_index(drop=True)
+                    combined_aspi.to_parquet(aspi_file, index=False)
+                except Exception as pq_exc:
+                    logger.warning("Could not update ASPI.parquet: %s", pq_exc)
+
             return True, current_val, f"ASPI synchronized at {current_val} for {today_date}"
         except Exception as exc:
             logger.error("Failed to sync ASPI index: %s", exc)
@@ -144,6 +162,21 @@ class DailyCSESyncService:
                 })
 
             count = upsert_records_chunked(session, StockPrice, records, conflict_keys=["symbol", "date"])
+
+            # Also keep data/processed/{clean_sym}.parquet synchronized
+            parquet_path = Path("data/processed") / f"{clean_sym}.parquet"
+            if parquet_path.exists():
+                try:
+                    existing_df = pd.read_parquet(parquet_path)
+                    existing_df["date"] = pd.to_datetime(existing_df["date"])
+                    fresh_df = pd.DataFrame(records)
+                    fresh_df["date"] = pd.to_datetime(fresh_df["date"])
+                    combined_df = pd.concat([existing_df, fresh_df], ignore_index=True)
+                    combined_df = combined_df.sort_values("date").drop_duplicates(subset=["date"], keep="last").reset_index(drop=True)
+                    combined_df.to_parquet(parquet_path, index=False)
+                except Exception as pq_exc:
+                    logger.warning("Could not update parquet for %s: %s", clean_sym, pq_exc)
+
             latest = records[-1]
             return {
                 "symbol": clean_sym,
@@ -213,10 +246,10 @@ class DailyCSESyncService:
                 session.close()
 
 
-def sync_daily_cse_market(session=None) -> Dict[str, Any]:
+def sync_daily_cse_market(session=None, symbols: Optional[List[str]] = None) -> Dict[str, Any]:
     """Top-level invocation wrapper for daily market sync."""
     service = DailyCSESyncService(session=session)
-    return service.run_sync()
+    return service.run_sync(symbols=symbols)
 
 
 if __name__ == "__main__":

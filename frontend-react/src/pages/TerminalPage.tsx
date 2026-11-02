@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   fetchAvailableStocks,
   fetchPrediction,
@@ -132,7 +133,16 @@ export const TerminalPage: React.FC = () => {
 
           <div className="flex flex-col text-right pl-4 border-l border-borderline">
             <span className="text-muted text-[10px] uppercase">Data Timestamp</span>
-            <span className="text-gray-200 font-semibold">{prediction?.as_of_date || '—'}</span>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-gray-200 font-semibold">{prediction?.as_of_date || '—'}</span>
+              <Link
+                to="/pipeline"
+                className="px-2 py-0.5 rounded bg-subsurface hover:bg-borderline border border-borderline text-brand text-[10px] transition-colors"
+                title="View dataset update dates or manually run CSE sync pipeline"
+              >
+                Sync Data
+              </Link>
+            </div>
           </div>
         </div>
       </div>

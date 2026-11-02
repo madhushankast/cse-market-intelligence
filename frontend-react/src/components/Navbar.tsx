@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Award,
   BookOpen,
+  Database,
   ExternalLink,
   Zap,
   Wifi,
@@ -82,6 +83,11 @@ export const Navbar: React.FC = () => {
             <span>Model Benchmarks</span>
           </NavLink>
 
+          <NavLink to="/pipeline" className={navLinkClass}>
+            <Database className="w-4 h-4" />
+            <span>Data Pipeline</span>
+          </NavLink>
+
           <a
             href={`${API_BASE_URL}/docs`}
             target="_blank"
@@ -150,6 +156,11 @@ export const Navbar: React.FC = () => {
             <NavLink to="/benchmarks" className={navLinkClass}>
               <Award className="w-4 h-4" />
               <span>Model Benchmarks</span>
+            </NavLink>
+
+            <NavLink to="/pipeline" className={navLinkClass}>
+              <Database className="w-4 h-4" />
+              <span>Data Pipeline & Sync</span>
             </NavLink>
 
             <a

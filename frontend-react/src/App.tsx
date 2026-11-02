@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { TerminalPage } from './pages/TerminalPage';
 import { BenchmarksPage } from './pages/BenchmarksPage';
+import { PipelinePage } from './pages/PipelinePage';
 
 export const App: React.FC = () => {
   return (
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/terminal" element={<TerminalPage />} />
             <Route path="/benchmarks" element={<BenchmarksPage />} />
+            <Route path="/pipeline" element={<PipelinePage />} />
             {/* Fallback redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

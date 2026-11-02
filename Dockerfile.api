@@ -20,9 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy application source, configs, models, and data
+# Copy application source, configs, scripts, models, and data
 COPY src/ ./src/
 COPY api/ ./api/
+COPY scripts/ ./scripts/
 COPY configs/ ./configs/
 COPY data/processed/ ./data/processed/
 COPY models/ ./models/

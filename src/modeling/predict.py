@@ -155,6 +155,17 @@ class ModelRegistryService:
         self.models_dir = Path(models_dir)
         self.heuristics_engine = IndicatorHeuristicsEngine()
 
+    def clear_cache(self, symbol: Optional[str] = None) -> None:
+        """Clears in-memory feature and model cache after a live data sync or model retrain."""
+        if symbol:
+            clean_sym = symbol.replace(".", "_")
+            self._cache.pop(f"data_{symbol}", None)
+            self._cache.pop(f"data_{clean_sym}", None)
+            self._cache.pop(f"models_{symbol}", None)
+            self._cache.pop(f"models_{clean_sym}", None)
+        else:
+            self._cache.clear()
+
     def get_processed_data(self, symbol: str) -> pd.DataFrame:
         """
         Loads raw historical stock data and engineers technical OHLCV features.

@@ -91,7 +91,7 @@ def run_daily_pipeline(
         # -------------------------------------------------------------
         if sync_live:
             print("\n[STAGE 1/4] Synchronizing Live CSE Market Data into Database...")
-            sync_res = sync_daily_cse_market(session=session)
+            sync_res = sync_daily_cse_market(session=session, symbols=symbols)
             total_ingested = sync_res.get("total_records_ingested", 0)
             print(f"    [+] Ingestion Complete: {sync_res['equities_synced']} Equities | {total_ingested} Bars Synced")
             print(f"    [+] ASPI Status: {sync_res['aspi_ok']} (LKR {sync_res['aspi_value']})")

@@ -270,3 +270,144 @@ export async function fetchPrediction(
     }
   }
 }
+
+export interface EquityDataStatus {
+  symbol: string;
+  code: string;
+  name: string;
+  sector: string;
+  min_date: string;
+  latest_date: string;
+  total_rows: number;
+  latest_close: number;
+  latest_volume: number;
+  model_trained: boolean;
+}
+
+export interface PipelineRunRecord {
+  id: number;
+  run_date: string;
+  job_name: string;
+  status: string;
+  records_ingested: number;
+  models_retrained: number;
+  duration_seconds: number;
+  message: string;
+  created_at: string;
+}
+
+export interface PipelineStatusData {
+  summary: {
+    total_equities: number;
+    trained_models_count: number;
+    total_bars: number;
+    latest_market_date: string | null;
+    latest_equity_date: string | null;
+    oldest_equity_date: string | null;
+  };
+  aspi: {
+    symbol: string;
+    name: string;
+    min_date: string | null;
+    latest_date: string | null;
+    total_rows: number;
+    latest_close: number | null;
+  };
+  equities: EquityDataStatus[];
+  recent_runs: PipelineRunRecord[];
+}
+
+export interface PipelineTriggerResult {
+  status: string;
+  message: string;
+  result: {
+    status: string;
+    models_retrained: number;
+    predictions_stored: number;
+    duration_seconds: number;
+  };
+}
+
+function buildFallbackPipelineStatus(): PipelineStatusData {
+  const equities: EquityDataStatus[] = FALLBACK_STOCKS.map((s) => ({
+    symbol: s.symbol,
+    code: s.code,
+    name: s.name,
+    sector: s.sector,
+    min_date: '2021-01-04',
+    latest_date: s.latest_date,
+    total_rows: 1024,
+    latest_close: s.latest_close,
+    latest_volume: s.latest_volume,
+    model_trained: true,
+  }));
+  const dates = equities.map((e) => e.latest_date).sort();
+  return {
+    summary: {
+      total_equities: equities.length,
+      trained_models_count: equities.length,
+      total_bars: equities.length * 1024 + 1053,
+      latest_market_date: dates[dates.length - 1] || '2026-10-27',
+      latest_equity_date: dates[dates.length - 1] || '2026-10-27',
+      oldest_equity_date: dates[0] || '2026-10-27',
+    },
+    aspi: {
+      symbol: 'ASPI',
+      name: 'All Share Price Index (CSE Benchmark)',
+      min_date: '2021-01-05',
+      latest_date: dates[dates.length - 1] || '2026-10-29',
+      total_rows: 1053,
+      latest_close: 16245.8,
+    },
+    equities,
+    recent_runs: [],
+  };
+}
+
+export async function fetchPipelineStatus(): Promise<PipelineStatusData> {
+  try {
+    const resp = await client.get('/api/v1/pipeline/status');
+    if (resp.data && resp.data.data) {
+      return resp.data.data;
+    }
+    return buildFallbackPipelineStatus();
+  } catch (err) {
+    if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+      try {
+        const resp = await remoteFallbackClient.get('/api/v1/pipeline/status');
+        if (resp.data && resp.data.data) {
+          return resp.data.data;
+        }
+      } catch {
+        // Fallback below
+      }
+    }
+    return buildFallbackPipelineStatus();
+  }
+}
+
+export async function triggerPipeline(options: {
+  symbols?: string[] | null;
+  sync_live?: boolean;
+  retrain?: boolean;
+}): Promise<PipelineTriggerResult> {
+  const payload = {
+    symbols: options.symbols ?? null,
+    sync_live: options.sync_live ?? true,
+    retrain: options.retrain ?? false,
+  };
+  try {
+    const resp = await client.post('/api/v1/pipeline/trigger', payload, {
+      timeout: 180000, // Allow up to 3 minutes for live sync + model retraining
+    });
+    return resp.data;
+  } catch (err) {
+    if (API_BASE_URL !== LIVE_RENDER_API_URL) {
+      const resp = await remoteFallbackClient.post('/api/v1/pipeline/trigger', payload, {
+        timeout: 180000,
+      });
+      return resp.data;
+    }
+    throw err;
+  }
+}
