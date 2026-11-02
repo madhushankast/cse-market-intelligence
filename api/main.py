@@ -20,6 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.predict import router as predict_router
 from api.routes.explain import router as explain_router
+from src.database.session import Base, engine
+from src.database import models as _db_models  # noqa: F401
 
 SERVER_START_TIME = time.time()
 
@@ -31,6 +33,9 @@ app = FastAPI(
     ),
     version="2.0.0",
 )
+
+# Ensure DB tables exist for API routes that read persisted predictions.
+Base.metadata.create_all(bind=engine)
 
 # Enable CORS for Streamlit / Vite React frontend
 app.add_middleware(

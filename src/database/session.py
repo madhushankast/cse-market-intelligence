@@ -70,7 +70,7 @@ def _use_sqlite_fallback():
 DATABASE_URL = _sanitize_database_url(os.getenv("DATABASE_URL"))
 
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql+psycopg2://cse_user:cse_password@localhost:5432/cse_db"
+    DATABASE_URL = "sqlite:///data/cse.db"
 
 # Configure engine with full resilience against invalid URLs or unreachable hosts
 try:
