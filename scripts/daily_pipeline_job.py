@@ -206,18 +206,22 @@ def run_daily_pipeline(
             heuristic_cards = heuristics_engine.evaluate_alignment(latest_row, p50_log_ret)
 
             # Prepare DB record
+            import json as _json
+            def _clean_json(obj):
+                return _json.loads(_json.dumps(obj, default=lambda x: float(x) if hasattr(x, "item") else str(x)))
+
             prediction_records.append({
                 "symbol": clean_sym,
                 "as_of_date": last_date.date(),
-                "current_price": current_price,
-                "price_p10": forecast_res["target_prices"]["price_p10"],
-                "price_p50": forecast_res["target_prices"]["price_p50"],
-                "price_p90": forecast_res["target_prices"]["price_p90"],
-                "expected_pct_change": forecast_res["target_returns"]["expected_pct_change"],
-                "target_returns": forecast_res["target_returns"],
-                "cone_trajectory": forecast_res["cone_trajectory"],
-                "shap_drivers": shap_drivers,
-                "heuristic_signals": heuristic_cards,
+                "current_price": float(current_price),
+                "price_p10": float(forecast_res["target_prices"]["price_p10"]),
+                "price_p50": float(forecast_res["target_prices"]["price_p50"]),
+                "price_p90": float(forecast_res["target_prices"]["price_p90"]),
+                "expected_pct_change": float(forecast_res["target_returns"]["expected_pct_change"]),
+                "target_returns": _clean_json(forecast_res["target_returns"]),
+                "cone_trajectory": _clean_json(forecast_res["cone_trajectory"]),
+                "shap_drivers": _clean_json(shap_drivers),
+                "heuristic_signals": _clean_json(heuristic_cards),
             })
 
             elapsed_stock = time.time() - t0

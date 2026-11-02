@@ -318,6 +318,28 @@ def get_pipeline_status():
             db_aspi_count = int(session.query(func.count(ASPIIndex.date)).scalar() or 0)
             db_predictions_count = int(session.query(func.count(ForecastPrediction.id)).scalar() or 0)
 
+            # Merge DB latest dates & counts so ephemeral containers reflect live Supabase DB state
+            db_sym_stats = {
+                row[0]: {"min_date": str(row[1]), "latest_date": str(row[2]), "total_rows": int(row[3])}
+                for row in session.query(
+                    StockPrice.symbol,
+                    func.min(StockPrice.date),
+                    func.max(StockPrice.date),
+                    func.count(StockPrice.date),
+                )
+                .group_by(StockPrice.symbol)
+                .all()
+            }
+            for eq in equities:
+                st = db_sym_stats.get(eq["symbol"])
+                if st:
+                    if not eq["latest_date"] or st["latest_date"] > eq["latest_date"]:
+                        eq["latest_date"] = st["latest_date"]
+                    if st["total_rows"] > eq["total_rows"]:
+                        eq["total_rows"] = st["total_rows"]
+
+            latest_equity_dates = [eq["latest_date"] for eq in equities if eq.get("latest_date")]
+
             rows = (
                 session.query(PipelineRun)
                 .order_by(PipelineRun.id.desc())
@@ -333,7 +355,7 @@ def get_pipeline_status():
                     "records_ingested": int(r.records_ingested or 0),
                     "models_retrained": int(r.models_retrained or 0),
                     "duration_seconds": float(r.duration_seconds or 0.0),
-                    "message": r.message or "",
+                    "message": (r.message or "")[:240],
                     "created_at": str(r.created_at) if r.created_at else str(r.run_date),
                 }
                 for r in rows
