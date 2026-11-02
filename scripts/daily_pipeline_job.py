@@ -79,12 +79,15 @@ def run_daily_pipeline(
         # Ensure database schema exists (essential on ephemeral runners / SQLite fallback)
         Base.metadata.create_all(bind=engine)
 
-        # Auto-seed historical baseline from data/processed/*.parquet if DB is empty
+        # Auto-seed historical baseline from data/processed/*.parquet if canonical symbols lack history
         existing_aspi_count = session.query(ASPIIndex).count()
-        existing_stock_count = session.query(StockPrice).count()
-        if existing_aspi_count == 0 or existing_stock_count < 1000:
-            print("\n[INIT] Database has insufficient baseline history. Seeding from data/processed/*.parquet...")
+        jkh_canonical_count = session.query(StockPrice).filter(StockPrice.symbol == "JKH_N0000").count()
+        if existing_aspi_count < 500 or jkh_canonical_count < 500:
+            print("\n[INIT] Canonical stock history incomplete in DB. Seeding full history from data/processed/*.parquet...")
             run_database_backfill(processed_dir=Path("data/processed"))
+            # Clean up any legacy dot-notation or un-suffixed symbol rows in stock_prices
+            session.execute(text("DELETE FROM stock_prices WHERE symbol LIKE '%.%' OR symbol IN ('EXPO', 'HEMA')"))
+            session.commit()
 
         # -------------------------------------------------------------
         # STAGE 1: Daily CSE Market Ingestion
@@ -119,8 +122,15 @@ def run_daily_pipeline(
         # Target Equities Selection
         # -------------------------------------------------------------
         if not symbols:
-            db_symbols = session.query(StockPrice.symbol).distinct().all()
-            symbols = sorted([r[0] for r in db_symbols])
+            processed_dir = Path("data/processed")
+            parquet_syms = sorted([f.stem for f in processed_dir.glob("*.parquet") if f.stem != "ASPI"])
+            if parquet_syms:
+                symbols = parquet_syms
+            else:
+                db_symbols = session.query(StockPrice.symbol).distinct().all()
+                symbols = sorted({r[0].replace(".", "_") for r in db_symbols})
+        else:
+            symbols = sorted({s.replace(".", "_") for s in symbols})
 
         print(f"\n[STAGE 2/4] Processing Expanding History for {len(symbols)} Equities...")
 

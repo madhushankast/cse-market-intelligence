@@ -200,15 +200,13 @@ class DailyCSESyncService:
             # 1. Sync ASPI
             aspi_ok, aspi_val, aspi_msg = self.sync_aspi_index(session)
 
-            # 2. Get target symbols from database or default list
+            # 2. Get canonical target symbols from data/processed or database
+            if not symbols:
+                processed_dir = Path("data/processed")
+                symbols = sorted([f.stem for f in processed_dir.glob("*.parquet") if f.stem != "ASPI"])
             if not symbols:
                 res = session.query(StockPrice.symbol).distinct().all()
-                symbols = [r[0] for r in res] if res else []
-
-            if not symbols:
-                # Fallback to files in data/processed
-                processed_dir = Path("data/processed")
-                symbols = [f.stem for f in processed_dir.glob("*.parquet") if f.stem != "ASPI"]
+                symbols = sorted({r[0].replace(".", "_") for r in res}) if res else []
 
             equity_summaries = []
             total_bars = 0
