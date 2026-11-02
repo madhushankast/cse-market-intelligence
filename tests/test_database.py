@@ -19,9 +19,18 @@ from sqlalchemy.orm import sessionmaker
 
 from api.main import app
 from src.database.models import Base, StockPrice, ASPIIndex, ForecastPrediction, PipelineRun
-from src.database.session import get_db
+from src.database.session import get_db, _sanitize_database_url
 
 client = TestClient(app)
+
+
+def test_sanitize_database_url_handles_secret_paste_format():
+    raw = """
+    # GitHub secret copied from .env
+    DATABASE_URL='postgres://localhost/cse_db'
+    """
+    sanitized = _sanitize_database_url(raw)
+    assert sanitized == "postgresql+psycopg2://localhost/cse_db"
 
 
 def test_db_models_crud(tmp_path):
