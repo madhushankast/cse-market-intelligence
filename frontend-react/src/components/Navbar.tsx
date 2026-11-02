@@ -7,7 +7,6 @@ import {
   Award,
   BookOpen,
   Database,
-  ExternalLink,
   Zap,
   Wifi,
   WifiOff,
@@ -87,17 +86,6 @@ export const Navbar: React.FC = () => {
             <Database className="w-4 h-4" />
             <span>Data Pipeline</span>
           </NavLink>
-
-          <a
-            href={`${API_BASE_URL}/docs`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-muted hover:text-gray-200 hover:bg-subsurface/50 border border-transparent hover:border-borderline transition-all"
-            title={`FastAPI Swagger Documentation (${API_BASE_URL}/docs)`}
-          >
-            <span>API Docs</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </nav>
 
         {/* Right Status Indicator & Mobile Menu Toggle */}
@@ -162,19 +150,6 @@ export const Navbar: React.FC = () => {
               <Database className="w-4 h-4" />
               <span>Data Pipeline & Sync</span>
             </NavLink>
-
-            <a
-              href={`${API_BASE_URL}/docs`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-mono text-muted hover:text-gray-200 hover:bg-subsurface/50 border border-transparent hover:border-borderline transition-all"
-            >
-              <span className="flex items-center gap-2">
-                <ExternalLink className="w-4 h-4" />
-                <span>FastAPI Swagger Docs</span>
-              </span>
-              <span className="text-[10px] text-brand">Open</span>
-            </a>
           </div>
 
           <div className="pt-2 border-t border-borderline/60 flex items-center justify-between text-[11px] font-mono text-muted px-1">

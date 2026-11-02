@@ -32,6 +32,9 @@ app = FastAPI(
         "using Multi-Quantile LightGBM, TreeSHAP feature attribution, and dual-layer heuristics."
     ),
     version="2.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 # Ensure DB tables exist for API routes that read persisted predictions.
@@ -81,12 +84,10 @@ def health_check():
 
 @app.get("/", tags=["System"])
 def root_info():
-    """Root metadata and API documentation navigation."""
+    """Root metadata."""
     return {
         "name": "Colombo Stock Exchange Market Intelligence Platform",
         "version": "2.0.0",
-        "docs_url": "/docs",
-        "openapi_url": "/openapi.json",
         "endpoints": {
             "stocks": "GET /api/v1/stocks",
             "predict_post": "POST /api/v1/predict",
