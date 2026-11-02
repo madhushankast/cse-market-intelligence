@@ -25,18 +25,56 @@ if env_file.exists():
 else:
     load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+def _sanitize_database_url(raw_val: str | None) -> str:
+    """
+    Sanitizes DATABASE_URL from environment or GitHub Secrets, handling:
+      - Leading/trailing whitespace, newlines, or quotes
+      - Accidental 'DATABASE_URL=' key prefix or multi-line .env paste
+      - 'postgres://' -> 'postgresql+psycopg2://' normalization
+    """
+    if not raw_val:
+        return ""
+    cleaned = raw_val.strip()
+    # If multi-line content was pasted into a secret, pick the first non-comment URL line
+    for line in cleaned.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.upper().startswith("DATABASE_URL"):
+            _, _, line = line.partition("=")
+            line = line.strip()
+        line = line.strip("'").strip('"').strip()
+        if line:
+            cleaned = line
+            break
+    if cleaned.startswith("postgres://"):
+        cleaned = cleaned.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif cleaned.startswith("postgresql://"):
+        cleaned = cleaned.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return cleaned
+
+
+def _use_sqlite_fallback():
+    data_dir = Path("data")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    sqlite_path = (data_dir / "cse.db").resolve()
+    fallback_url = f"sqlite:///{sqlite_path}"
+    fallback_engine = create_engine(
+        fallback_url,
+        connect_args={"check_same_thread": False},
+    )
+    logger.info("Using SQLite fallback at %s", sqlite_path)
+    return fallback_url, fallback_engine
+
+
+DATABASE_URL = _sanitize_database_url(os.getenv("DATABASE_URL"))
 
 if not DATABASE_URL:
-    # Default to PostgreSQL connection string; fall back to SQLite if PG host unreachable
-    pg_url = "postgresql+psycopg2://cse_user:cse_password@localhost:5432/cse_db"
-    DATABASE_URL = pg_url
-elif DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+    DATABASE_URL = "postgresql+psycopg2://cse_user:cse_password@localhost:5432/cse_db"
 
-# Configure engine with appropriate dialect arguments
-if DATABASE_URL.startswith("postgresql"):
-    try:
+# Configure engine with full resilience against invalid URLs or unreachable hosts
+try:
+    if DATABASE_URL.startswith("postgresql"):
         engine = create_engine(
             DATABASE_URL,
             pool_size=10,
@@ -44,29 +82,22 @@ if DATABASE_URL.startswith("postgresql"):
             pool_pre_ping=True,
             connect_args={"connect_timeout": 3},
         )
-        # Test connection
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("Connected successfully to PostgreSQL database: %s", DATABASE_URL.split("@")[-1])
-    except Exception as exc:
-        logger.warning(
-            "PostgreSQL is unreachable (%s). Falling back to local SQLite at data/cse.db.",
-            exc,
-        )
-        data_dir = Path("data")
-        data_dir.mkdir(parents=True, exist_ok=True)
-        sqlite_path = (data_dir / "cse.db").resolve()
-        DATABASE_URL = f"sqlite:///{sqlite_path}"
+    else:
         engine = create_engine(
             DATABASE_URL,
-            connect_args={"check_same_thread": False},
+            connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
         )
-        logger.info("Using SQLite fallback at %s", sqlite_path)
-else:
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+except Exception as exc:
+    logger.warning(
+        "Primary DATABASE_URL unavailable or invalid (%s). Falling back to local SQLite at data/cse.db.",
+        exc,
     )
+    DATABASE_URL, engine = _use_sqlite_fallback()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
